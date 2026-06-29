@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="../OCPPaymentSystem.Web/OCPPaymentSystem.Web.csproj" Id="c99ac456-cf70-411c-ae5b-439b194329fa" />
+  <Project Path="OCPPaymentSystemAPI.csproj" />
+</Solution>

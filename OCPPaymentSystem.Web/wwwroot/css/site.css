@@ -1,0 +1,66 @@
+body {
+    background: #efefef;
+    font-family: Arial;
+    font-size: 13px;
+}
+
+.top-header {
+    height: 55px;
+    background: white;
+    border-bottom: 1px solid #cccccc;
+    padding: 15px;
+}
+
+.system-title {
+    font-size: 22px;
+    font-weight: bold;
+    color: #004080;
+}
+
+.header-left {
+    float: left;
+}
+
+.header-right {
+    float: right;
+}
+
+.main-container {
+    margin: 20px;
+}
+
+.panel-box {
+    background: white;
+    border: 1px solid #d0d0d0;
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.panel-title {
+    font-weight: bold;
+    margin-bottom: 15px;
+    color: #404040;
+}
+
+.table thead {
+    background: #f5f5f5;
+}
+
+.btn-ocp {
+    width: 95px;
+}
+
+.memo-label {
+    width: 130px;
+    font-weight: bold;
+}
+
+.upload-box {
+    display: flex;
+    gap: 8px;
+}
+
+textarea {
+    resize: none;
+}

@@ -26,56 +26,43 @@ namespace OCPPaymentSystemAPI.Data
         public async Task<MemoResponse?> GetByNoAsync(string memoNo)
         {
             using SqlConnection conn = _database.GetConnection();
-
             await conn.OpenAsync();
 
             string sql = @"
-
 SELECT
-
-fldNo,
-fldCompanyCode,
-fldSupplierCode,
-fldDate,
-fldAmount,
-fldRemarks,
-fldCreatedBy,
-fldCreatedOn
-
-FROM tbdMemo
-
+    fldNo,
+    fldCompanyCode,
+    fldSupplierCode,
+    fldDate,
+    fldAmount,
+    fldRemarks,
+    fldCreatedBy,
+    fldCreatedOn,
+    fldMillCode,
+    ApprovalLevel
+FROM vw_SearchMemo
 WHERE fldNo=@MemoNo
-
 ";
 
             SqlCommand cmd = new(sql, conn);
-
             cmd.Parameters.Add("@MemoNo", SqlDbType.NVarChar).Value = memoNo;
-
             SqlDataReader dr = await cmd.ExecuteReaderAsync();
-
             if (await dr.ReadAsync())
             {
                 return new MemoResponse
                 {
                     MemoNo = dr["fldNo"].ToString() ?? "",
-
                     CompanyCode = dr["fldCompanyCode"].ToString() ?? "",
-
                     SupplierCode = dr["fldSupplierCode"].ToString() ?? "",
-
                     MemoDate = Convert.ToDateTime(dr["fldDate"]),
-
                     Amount = Convert.ToDecimal(dr["fldAmount"]),
-
                     Remarks = dr["fldRemarks"].ToString() ?? "",
-
                     CreatedBy = dr["fldCreatedBy"].ToString() ?? "",
-
-                    CreatedOn = Convert.ToDateTime(dr["fldCreatedOn"])
+                    CreatedOn = Convert.ToDateTime(dr["fldCreatedOn"]),
+                    MillCode = dr["fldMillCode"].ToString() ?? "",
+                    ApprovalLevel = Convert.ToInt32(dr["ApprovalLevel"])
                 };
             }
-
             return null;
         }
 
@@ -233,7 +220,6 @@ WHERE fldNo=@MemoNo
             List<MemoResponse> list = new();
 
             using SqlConnection conn = _database.GetConnection();
-
             await conn.OpenAsync();
 
             string sql = @"SELECT * FROM vw_SearchMemo WHERE 1=1 ";
@@ -248,53 +234,32 @@ WHERE fldNo=@MemoNo
                 sql += $" AND fldCompanyCode IN ({string.Join(",", parameters)}) ";
             }
 
-            if (request.millCode != null)
-            {
-                sql += " AND fldMillCode=@millCode ";
-            }
-
-            if (!string.IsNullOrWhiteSpace(request.MemoNo))
-            {
-                sql += " AND fldNo LIKE @MemoNo ";
-            }
-
-            if (!string.IsNullOrWhiteSpace(request.SupplierCode))
-            {
-                sql += " AND fldSupplierCode=@SupplierCode ";
-            }
-
-            if (request.DateFrom != null)
-            {
-                sql += " AND fldDate>=@DateFrom ";
-            }
-
-            if (request.DateTo != null)
-            {
-                sql += " AND fldDate<=@DateTo ";
-            }
+            if (request.ApprovalLevel >= 0) { sql += " AND ApprovalLevel=@ApprovalLevel "; }
+            if (!string.IsNullOrWhiteSpace(request.millCode)) {sql += " AND fldMillCode=@millCode ";}
+            if (!string.IsNullOrWhiteSpace(request.MemoNo)) {sql += " AND fldNo LIKE @MemoNo ";}
+            if (!string.IsNullOrWhiteSpace(request.SupplierCode)) {sql += " AND fldSupplierCode=@SupplierCode ";}
+            if (request.DateFrom != null) {sql += " AND fldDate>=@DateFrom ";}
+            if (request.DateTo != null) {sql += " AND fldDate<=@DateTo ";}
 
             sql += " ORDER BY fldDate DESC ";
 
             SqlCommand cmd = new(sql, conn);
 
-            if (!string.IsNullOrWhiteSpace(request.MemoNo))
-                cmd.Parameters.Add("@MemoNo", SqlDbType.NVarChar).Value =
-                    "%" + request.MemoNo + "%";
-
-            if (!string.IsNullOrWhiteSpace(request.SupplierCode))
-                cmd.Parameters.Add("@SupplierCode", SqlDbType.NVarChar).Value =
-                    request.SupplierCode;
-
-            if (request.DateFrom != null)
-                cmd.Parameters.Add("@DateFrom", SqlDbType.Date).Value =
-                    request.DateFrom.Value;
-
-            if (request.DateTo != null)
-                cmd.Parameters.Add("@DateTo", SqlDbType.Date).Value =
-                    request.DateTo.Value;
+            if (request.CompanyAccess != null && request.CompanyAccess.Count > 0)
+            {
+                for (int i = 0; i < request.CompanyAccess.Count; i++)
+                {
+                    cmd.Parameters.Add("@CompanyCode" + i,SqlDbType.NVarChar).Value = request.CompanyAccess[i];
+                }
+            }
+            if (request.ApprovalLevel >= 0) cmd.Parameters.Add("@ApprovalLevel", SqlDbType.NVarChar).Value = request.ApprovalLevel;
+            if (!string.IsNullOrWhiteSpace(request.millCode)) cmd.Parameters.Add("@millCode", SqlDbType.NVarChar).Value = request.millCode;
+            if (!string.IsNullOrWhiteSpace(request.MemoNo)) cmd.Parameters.Add("@MemoNo", SqlDbType.NVarChar).Value = "%" + request.MemoNo + "%";
+            if (!string.IsNullOrWhiteSpace(request.SupplierCode)) cmd.Parameters.Add("@SupplierCode", SqlDbType.NVarChar).Value = request.SupplierCode;
+            if (request.DateFrom != null) cmd.Parameters.Add("@DateFrom", SqlDbType.Date).Value = request.DateFrom.Value;
+            if (request.DateTo != null) cmd.Parameters.Add("@DateTo", SqlDbType.Date).Value = request.DateTo.Value;
 
             SqlDataReader dr = await cmd.ExecuteReaderAsync();
-
             while (await dr.ReadAsync())
             {
                 list.Add(new MemoResponse
@@ -316,7 +281,6 @@ WHERE fldNo=@MemoNo
                     MillCode = dr["fldMillCode"].ToString() ?? ""
                 });
             }
-
             return list;
         }
 

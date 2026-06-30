@@ -51,7 +51,13 @@ OUTER APPLY
 ) A
 WHERE 1=1
 
+USE OCPPaymentSystem
 SELECT * FROM vw_SearchMemo
+SELECT * FROM tbdMemo
+SELECT * FROM tbdApproval
+DELETE FROM tbdApproval WHERE fldNo='MEM20260600015'
+
+SELECT * FROM tbdApprovalLevel
 
 SELECT *
 FROM [172.16.192.10].[SAP_Replicate_New].[dbo].[SW_SUPPLIER]
@@ -88,13 +94,17 @@ WHERE fldName NOT IN
 	WHERE a.Period='2026-06-01 00:00:00' AND a.Business_Title LIKE '%Area Controller%'
 )
 
+--00077780 Pradana Nayang - Treasury
+--00043484 Iswanto - Accounting
+--00043228 Yustinus Lambang - CFO
+
 --M393 Sekunyir Factory
 --00043445 Ondra Utama - RCEO
 --00043628 Pandjaitan Novery Erpan - Area Controller
 --00043652 Sutrisno - Manager
 --00043901 Sapon Priyanto - Kepala Tata Usaha
 --00303100 Isnanda Utama Harahap - Senior Assistant
-
+SELECT * FROM vw_SearchMemo
 --M438 Ungkaya Factory - tidak mempunyai AC
 --00072231 - Yuliono - Cov Manager, Ungkaya Factory - POM
 --00075224 - Amrin Naing - Kasie UKF

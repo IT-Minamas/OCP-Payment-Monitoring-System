@@ -3,6 +3,7 @@ using OCPPaymentSystem.Web.Models;
 using OCPPaymentSystem.Web.Services;
 using System.Text.Json;
 using System.Linq;
+using OCPPaymentSystem.Web.Helpers;
 
 namespace OCPPaymentSystem.Web.Controllers
 {
@@ -111,13 +112,29 @@ namespace OCPPaymentSystem.Web.Controllers
 
             LoginUser currentUser = JsonSerializer.Deserialize<LoginUser>(json)!;
 
+            MemoListRequest request = new MemoListRequest
+            {
+                approvalLevel = currentUser.ApprovalLevel,
+                CompanyAccess = currentUser.CompanyAccess,
+                memoNo = "",
+                supplierCode = "",
+                millCode = currentUser.UnitCode,
+                dateFrom = new DateTime(2000, 1, 1),
+                dateTo = new DateTime(2100, 1, 1)
+            };
+
+            if (currentUser.ApprovalLevel >= 20)
+            {
+                request.millCode = null;
+            }
+
             var result =
                 await _api.PostAsync<
                     MemoListRequest,
                     ApiResponse<List<MemoListModel>>>
             (
                 "Memo/Search",
-                new MemoListRequest { approvalLevel = currentUser.ApprovalLevel, CompanyAccess = currentUser.CompanyAccess, memoNo = "", supplierCode = "", millCode = currentUser.UnitCode, dateFrom= new DateTime(2026,6,1), dateTo= new DateTime(2026, 6, 30) },
+                request,
                 true,
                 "MINAMAS-2026"
             );
@@ -135,6 +152,157 @@ namespace OCPPaymentSystem.Web.Controllers
                     "MINAMAS-2026");
 
             return Json(result.Data);
+        }
+
+        [HttpPost]
+        public async Task<JsonResult> Delete(
+            [FromBody] MemoDeleteRequest request)
+        {
+            try
+            {
+                LoginUser? currentUser =
+                    HttpContext.Session.GetObject<LoginUser>("CurrentUser");
+
+                if (currentUser == null)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = "Session expired."
+                    });
+                }
+
+                var apiRequest = new
+                {
+                    MemoNo = request.MemoNo
+                };
+
+                var result =
+                    await _api.PostAsync<
+                        object,
+                        ApiResponse<bool>>
+                (
+                    "Memo/Delete/",
+                    apiRequest,
+                    true,
+                    "MINAMAS-2026"
+                );
+
+                return Json(new
+                {
+                    success = result.Success,
+                    message = result.Message
+                });
+
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = ex.Message
+                });
+            }
+        }
+
+        [HttpPost]
+        public async Task<JsonResult> Submit(
+            [FromBody] MemoSubmitRequest request)
+        {
+            try
+            {
+                LoginUser? currentUser = HttpContext.Session.GetObject<LoginUser>("CurrentUser");
+
+                if (currentUser == null)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = "Session expired."
+                    });
+                }
+
+                request.UserName =
+                    currentUser.fldUserId;
+
+                request.UserIP =
+                    HttpContext.Connection.RemoteIpAddress?.ToString() ?? "";
+
+                var result =
+                    await _api.PostAsync<
+                        MemoSubmitRequest,
+                        ApiResponse<bool>>
+                (
+                    "Memo/Submit",
+                    request,
+                    true,
+                    "MINAMAS-2026"
+                );
+
+                return Json(new
+                {
+                    success = result.Success,
+                    message = result.Message
+                });
+
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = ex.Message
+                });
+            }
+        }
+
+
+        [HttpPost]
+        public async Task<JsonResult> Update(
+            [FromBody] MemoSaveRequest request)
+        {
+            try
+            {
+                LoginUser? currentUser =
+                    HttpContext.Session.GetObject<LoginUser>("CurrentUser");
+
+                if (currentUser == null)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = "Session expired."
+                    });
+                }
+
+                request.userName =
+                    currentUser.fldUserId;
+
+                request.userIP =
+                    HttpContext.Connection.RemoteIpAddress?.ToString() ?? "";
+
+                var result =
+                    await _api.PostAsync<
+                        MemoSaveRequest,
+                        ApiResponse<bool>>
+                (
+                    "Memo/Update",
+                    request,
+                    true,
+                    "MINAMAS-2026"
+                );
+
+                return Json(result);
+
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = ex.Message
+                });
+            }
         }
 
         [HttpPost]
@@ -189,6 +357,58 @@ namespace OCPPaymentSystem.Web.Controllers
                 {
                     Success = false,
                     Message = ex.Message
+                });
+            }
+        }
+
+        [HttpPost]
+        public async Task<JsonResult> Approve(
+            [FromBody] MemoApproveRequest request)
+        {
+            try
+            {
+                LoginUser? user =
+                    HttpContext.Session.GetObject<LoginUser>("CurrentUser");
+
+                if (user == null)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = "Session expired."
+                    });
+                }
+
+                request.UserName =
+                    user.fldUserId;
+
+                request.UserIP =
+                    HttpContext.Connection.RemoteIpAddress?.ToString() ?? "";
+
+                var result =
+                    await _api.PostAsync<
+                        MemoApproveRequest,
+                        ApiResponse<bool>>
+                (
+                    "Memo/Approve",
+                    request,
+                    true,
+                    "MINAMAS-2026"
+                );
+
+                return Json(new
+                {
+                    success = result.Success,
+                    message = result.Message
+                });
+
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = ex.Message
                 });
             }
         }

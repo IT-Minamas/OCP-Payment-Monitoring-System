@@ -12,6 +12,7 @@
         public string remarks { get; set; } = "";
         public string createdBy { get; set; } = "";
         public DateTime createdOn { get; set; }
+        public string millCode { get; set; } = "";
         public int approvalLevel { get; set; } = -10;
         public string approvalStatus { get; set; } = "";
         public string approvedBy { get; set; } = "";

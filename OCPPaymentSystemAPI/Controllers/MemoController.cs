@@ -42,7 +42,7 @@ namespace OCPPaymentSystemAPI.Controllers
             }
         }
 
-        [HttpPut]
+        [HttpPost]
         [Route("Update")]
         public async Task<IActionResult> Update(
             [FromBody] MemoUpdateRequest request)
@@ -87,9 +87,10 @@ namespace OCPPaymentSystemAPI.Controllers
             }
         }
 
-        [HttpDelete]
-        [Route("Delete/{memoNo}")]
-        public async Task<IActionResult> Delete(string memoNo)
+        [HttpPost]
+        [Route("Delete")]
+        public async Task<IActionResult> Delete(
+            [FromBody] MemoDeleteRequest request)
         {
             if (!ValidateApiKey())
                 return ApiKeyError();
@@ -97,7 +98,7 @@ namespace OCPPaymentSystemAPI.Controllers
             try
             {
                 bool result =
-                    await _memoData.DeleteAsync(memoNo);
+                    await _memoData.DeleteAsync(request.MemoNo);
 
                 if (!result)
                     return Failed("Memo not found.");

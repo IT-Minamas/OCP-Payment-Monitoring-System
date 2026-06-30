@@ -2,6 +2,82 @@
     loadCompany();
     loadSupplier();
     loadMemo();
+
+    if (currentUser.approvalLevel == 0) {
+        submissionMode();
+    } else {
+        approvalMode();
+    }
+});
+
+$(document).on("click", "#tblMemo tr", function () {
+        loadDetail(
+            $(this).attr("data-id"));
+    });
+
+$(document).on("click","#btnSave", function () {
+        saveMemo();
+    });
+
+$("#btnDelete").click(function () {
+    DeleteMemo();
+});
+
+$("#btnSubmit").click(function () {
+    SubmitMemo();
+});
+
+$("#btnApprove").click(function () {
+    approveMemo();
+});
+
+$(document).on("click", "#btnNew", function () {
+    clearForm();
+});
+
+$(document).on("click", "#btnInvoice", function () {
+    if ($("#MemoNo").val() == "") {
+        alert("Please save Memo first.");
+        return;
+    }
+    $("#fileInvoice").click();
+});
+
+$(document).on("click", "#btnBAP", function () {
+    if ($("#MemoNo").val() == "") {
+        alert("Please save Memo first.");
+        return;
+    }
+    $("#fileBAP").click();
+});
+
+$(document).on("click", "#btnFaktur", function () {
+    if ($("#MemoNo").val() == "") {
+        alert("Please save Memo first.");
+        return;
+    }
+    $("#fileFaktur").click();
+});
+
+$("#fileInvoice").change(function () {
+    uploadAttachment(
+        "INVOICE",
+        this.files[0]);
+
+});
+
+$("#fileBAP").change(function () {
+    uploadAttachment(
+        "BAP",
+        this.files[0]);
+
+});
+
+$("#fileFaktur").change(function () {
+    uploadAttachment(
+        "FAKTURPAJAK",
+        this.files[0]);
+
 });
 
 function loadCompany() {
@@ -40,6 +116,47 @@ function loadSupplier() {
     });
 }
 
+function DeleteMemo() {
+
+    if ($("#MemoNo").val() == "") {
+        alert("No Memo selected.");
+        return;
+    }
+
+    if (!confirm("Delete this Memo ?"))
+        return;
+
+    $.ajax({
+        url: "/Memo/Delete",
+        type: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({
+            MemoNo: $("#MemoNo").val()
+        }),
+
+        success: function (result) {
+            if (!result.success) {
+                alert(result.message);
+                return;
+            }
+
+            alert("Memo deleted successfully.");
+            NewMemo();
+            loadMemo();
+            submissionMode();
+        },
+
+        error: function (xhr) {
+            alert(xhr.responseText);
+        }
+    });
+
+}
+
+function NewMemo() {
+    clearForm();
+}
+
 function loadMemo() {
     $.get("/Memo/MemoList", function (data) {
         $("#tblMemo").empty();
@@ -63,13 +180,6 @@ function loadMemo() {
     });
 }
 
-$(document).on("click",
-    "#tblMemo tr",
-    function () {
-        loadDetail(
-            $(this).attr("data-id"));
-    });
-
 function loadDetail(memoNo) {
     $.get(
         "/Memo/Detail",
@@ -81,51 +191,123 @@ function loadDetail(memoNo) {
             $("#MemoNo").val(x.memoNo);
             $("#Company").val(x.companyCode);
             $("#Supplier").val(x.supplierCode);
+            $("#MillCode").val(x.millCode);
 
-            let dt = new Date(x.date);         
-            //$("#MemoDate").val(dt.toLocaleDateString("en-GB"));
+            let dt = new Date(x.memoDate);
+            let month = String(dt.getMonth() + 1).padStart(2, '0');
+            let day = String(dt.getDate()).padStart(2, '0');
+            let year = dt.getFullYear();
 
+            $("#MemoDate").val(`${year}-${month}-${day}`);
             $("#Amount").val(x.amount);
             $("#Remarks").val(x.remarks);
             $("#Invoice").val(x.invoice);
             $("#BAP").val(x.bap);
             $("#FakturPajak").val(x.fakturPajak);
+            $("#ApprovalLevel").val(x.ApprovalLevel);
+            if (x.approvalLevel == 0) {
+                submissionMode();
+            } else {
+                approvalMode();
+            }
         });
 
 //    loadAttachment();
 }
+function approveMemo() {
+    if ($("#MemoNo").val() == "") {
+        alert("No memo selected.");
+        return;
+    }
 
-$(document).on("click", "#btnNew", function () {
+    if (!confirm("Approve this memo?"))
+        return;
 
-    clearForm();
+    $.ajax({
+        url: "/Memo/Approve",
+        type: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({
+            memoNo: $("#MemoNo").val()
+        }),
 
-});
+        success: function (result) {
+            if (!result.success) {
+                alert(result.message);
+                return;
+            }
+
+            alert("Memo approved.");
+            loadDetail($("#MemoNo").val());
+            loadMemo();
+        },
+
+        error: function (xhr) {
+            alert(xhr.responseText);
+        }
+    });
+}
+
+function approvalMode() {
+    $("#Company").prop("disabled", true);
+    $("#Supplier").prop("disabled", true);
+    $("#MemoDate").prop("disabled", true);
+    $("#Amount").prop("disabled", true);
+    $("#Remarks").prop("disabled", true);
+
+    /*
+    $("#btnNew").prop("disabled", false);
+    $("#btnSave").prop("disabled", false);
+    $("#btnSubmit").prop("disabled", false);
+    $("#btnDelete").prop("disabled", false);
+    $("#btnApprove").prop("disabled", true);
+    $("#btnReject").prop("disabled", true);
+    */
+
+    $("#btnNew").hide();
+    $("#btnSave").hide();
+    $("#btnDelete").hide();
+    $("#btnSubmit").hide();
+
+    $("#btnApprove").show();
+    $("#btnReject").show();
+}
+function submissionMode() {
+    $("#Company").prop("disabled", false);
+    $("#Supplier").prop("disabled", false);
+    $("#MemoDate").prop("disabled", false);
+    $("#Amount").prop("disabled", false);
+    $("#Remarks").prop("disabled", false);
+
+    /*
+    $("#btnNew").prop("disabled", true);
+    $("#btnSave").prop("disabled", true);
+    $("#btnSubmit").prop("disabled", true);
+    $("#btnDelete").prop("disabled", true);
+    $("#btnApprove").prop("disabled", false);
+    $("#btnReject").prop("disabled", false);
+    */
+
+    $("#btnNew").show();
+    $("#btnSave").show();
+    $("#btnDelete").show();
+    $("#btnSubmit").show();
+
+    $("#btnApprove").hide();
+    $("#btnReject").hide();
+}
 
 function clearForm() {
     $("#MemoNo").val("");
-
     $("#Company").prop("selectedIndex", 0);
-
     $("#Supplier").prop("selectedIndex", 0);
-
     $("#MemoDate").val("");
-
     $("#Amount").val("");
-
     $("#Remarks").val("");
-
     $("#Invoice").val("");
-
     $("#BAP").val("");
-
     $("#FakturPajak").val("");
 }
-
-$(document).on("click",
-    "#btnSave",
-    function () {
-        saveMemo();
-    });
 
 function saveMemo() {
     if ($("#Company").val() == "") {
@@ -154,11 +336,18 @@ function saveMemo() {
         supplierCode: $("#Supplier").val(),
         memoDate: $("#MemoDate").val(),
         amount: $("#Amount").val(),
-        remarks: $("#Remarks").val()
+        remarks: $("#Remarks").val(),
+        memoNo: $("#MemoNo").val(),
+        millCode: $("#MillCode").val()
     };
 
+    let url =
+        $("#MemoNo").val() == ""
+            ? "/Memo/Save"
+            : "/Memo/Update";
+
     $.ajax({
-        url: "/Memo/Save",
+        url: url,
         type: "POST",
         contentType: "application/json",
         data: JSON.stringify(data),
@@ -188,72 +377,6 @@ function saveMemo() {
     });
 
 }
-
-$(document).on("click", "#btnInvoice", function () {
-
-    if ($("#MemoNo").val() == "") {
-
-        alert("Please save Memo first.");
-
-        return;
-
-    }
-
-    $("#fileInvoice").click();
-
-});
-
-$(document).on("click", "#btnBAP", function () {
-
-    if ($("#MemoNo").val() == "") {
-
-        alert("Please save Memo first.");
-
-        return;
-
-    }
-
-    $("#fileBAP").click();
-
-});
-
-$(document).on("click", "#btnFaktur", function () {
-
-    if ($("#MemoNo").val() == "") {
-
-        alert("Please save Memo first.");
-
-        return;
-
-    }
-
-    $("#fileFaktur").click();
-
-});
-
-$("#fileInvoice").change(function () {
-
-    uploadAttachment(
-        "INVOICE",
-        this.files[0]);
-
-});
-
-$("#fileBAP").change(function () {
-
-    uploadAttachment(
-        "BAP",
-        this.files[0]);
-
-});
-
-$("#fileFaktur").change(function () {
-
-    uploadAttachment(
-        "FAKTURPAJAK",
-        this.files[0]);
-
-});
 
 function uploadAttachment(
     documentType,
@@ -362,4 +485,38 @@ function formatDate(value) {
         + month[dt.getMonth()]
         + "-"
         + dt.getFullYear();
+}
+
+function SubmitMemo() {
+    if ($("#txtMemoNo").val() == "") {
+        alert("Please save Memo first.");
+        return;
+    }
+
+    if (!confirm("Submit this Memo for Approval?"))
+        return;
+
+    $.ajax({
+        url: "/Memo/Submit",
+        type: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({
+            MemoNo: $("#MemoNo").val()
+        }),
+
+        success: function (result) {
+            if (result.success) {
+                alert("Memo submitted successfully.");
+                loadDetail($("#MemoNo").val());
+                loadMemo();
+            }
+            else {
+                alert(result.message);
+            }
+        },
+
+        error: function (xhr) {
+            alert(xhr.responseText);
+        }
+    });
 }

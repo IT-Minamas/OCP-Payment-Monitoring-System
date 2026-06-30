@@ -2,294 +2,112 @@
     ViewData["Title"] = "Memo";
 }
 
+@using OCPPaymentSystem.Web.Helpers
+@using OCPPaymentSystem.Web.Models
+
+@{
+    LoginUser? user =
+        Context.Session.GetObject<LoginUser>("CurrentUser");
+}
+
+<script>
+    const currentUser = {
+        userId: "@user?.fldUserId",
+        approvalLevel: @user?.ApprovalLevel,
+        companyCode: "@user?.CompanyCode",
+        unitCode: "@user?.UnitCode"
+    };
+</script>
+
 <div class="panel-box">
-
-    <div class="panel-title">
-
-        MEMO LIST
-
-    </div>
-
+    <div class="panel-title">MEMO LIST</div>
     <table class="table table-bordered table-hover">
-
         <thead>
-
             <tr>
-
-                <th width="50">
-
-                    No
-
-                </th>
-
-                <th width="80">
-
-                    Company
-
-                </th>
-
-                <th>
-
-                    Supplier
-
-                </th>
-
-                <th width="120">
-
-                    Date
-
-                </th>
-
-                <th width="140">
-
-                    Amount
-
-                </th>
-
-                <th width="220">
-
-                    Memo No
-
-                </th>
-
-                <th width="180">
-
-                    Status
-
-                </th>
-
+                <th width="50">No</th>
+                <th width="80">Company</th>
+                <th>Supplier</th>
+                <th width="120">Date</th>
+                <th width="140">Amount</th>
+                <th width="220">Memo No</th>
+                <th width="180">Status</th>
             </tr>
-
         </thead>
-
         <tbody id="tblMemo">
         </tbody>
-
     </table>
-
 </div>
 
 <div class="panel-box">
-
-    <div class="panel-title">
-
-        MEMO DETAIL
-
-    </div>
-
+ <div class="panel-title">MEMO DETAIL</div>
     <table class="table table-borderless">
-
         <tr>
-
-            <td class="memo-label">
-
-                Company
-
-            </td>
-
+            <td class="memo-label">Company</td>
             <td>
-                <input type="hidden"
-                       id="MemoNo" />
-                <select id="Company"
-                        class="form-select">
-                </select>
-
+                <input type="hidden" id="MemoNo" />
+                <input type="hidden" id="ApprovalLevel" value="@user?.ApprovalLevel" />
+                <input type="hidden" id="MillCode" />
+                <select id="Company" class="form-select"></select>
             </td>
-
-            <td width="220">
-            </td>
-
+            <td width="220"></td>
         </tr>
-
         <tr>
-
-            <td>
-
-                Supplier
-
-            </td>
-
-            <td>
-
-                <select class="form-select"
-                        id="Supplier">
-                </select>
-
-            </td>
-
-            <td>
-
-                <button class="btn btn-secondary">
-
-                    SDGWeigh Checking
-
-                </button>
-
-            </td>
-
+            <td>Supplier</td>
+            <td><select class="form-select" id="Supplier"></select></td>
+            <td><button class="btn btn-secondary">SDGWeigh Checking</button></td>
         </tr>
-
         <tr>
-
-            <td>
-
-                Date
-
-            </td>
-
-            <td>
-
-                <input type="date"
-                       class="form-control"
-                       id="MemoDate" />
-
-            </td>
-
+            <td>Date</td>
+            <td><input type="date" class="form-control" id="MemoDate" /></td>
         </tr>
-
         <tr>
-
-            <td>
-
-                Amount
-
-            </td>
-
-            <td>
-
-                <input class="form-control"
-                       id="Amount" />
-
-            </td>
-
+            <td>Amount</td>
+            <td><input class="form-control" id="Amount" /></td>
         </tr>
-
         <tr>
-
             <td>Invoice</td>
-
-            <td>
-
-                <div class="input-group">
-
-                    <input id="Invoice"
-                           class="form-control"
-                           readonly />
-
-                    <button id="btnInvoice"
-                            type="button"
-                            class="btn btn-secondary">
-
-                        ...
-
-                    </button>
-
+            <td><div class="input-group">
+                    <input id="Invoice" class="form-control" readonly />
+                    <button id="btnInvoice" type="button" class="btn btn-secondary">...</button>
                 </div>
-
-                <input type="file"
-                       id="fileInvoice"
-                       hidden />
-
+                    <input type="file" id="fileInvoice" hidden />
             </td>
-
         </tr>
         <tr>
-
             <td>BAP</td>
-
             <td>
-
-                <div class="input-group">
-
-                    <input id="BAP"
-                           class="form-control"
-                           readonly />
-
-                    <button id="btnBAP"
-                            type="button"
-                            class="btn btn-secondary">
-
-                        ...
-
-                    </button>
-
+                <div class="input-group"><input id="BAP" class="form-control" readonly />
+                    <button id="btnBAP" type="button" class="btn btn-secondary">...</button>
                 </div>
-
-                <input type="file"
-                       id="fileBAP"
-                       hidden />
-
+                <input type="file" id="fileBAP" hidden />
             </td>
-
         </tr>
         <tr>
-
             <td>Faktur Pajak</td>
-
             <td>
-
                 <div class="input-group">
-
-                    <input id="FakturPajak"
-                           class="form-control"
-                           readonly />
-
-                    <button id="btnFaktur"
-                            type="button"
-                            class="btn btn-secondary">
-
-                        ...
-
-                    </button>
-
+                    <input id="FakturPajak" class="form-control" readonly />
+                    <button id="btnFaktur" type="button" class="btn btn-secondary">...</button>
                 </div>
-
-                <input type="file"
-                       id="fileFaktur"
-                       hidden />
-
+                <input type="file" id="fileFaktur" hidden />
             </td>
-
         </tr>
         <tr>
-
-            <td>
-
-                Remarks
-
-            </td>
-
-            <td>
-
-                <textarea rows="5"
-                          class="form-control"
-                          id="Remarks"></textarea>
-
-            </td>
-
+            <td>Remarks</td>
+            <td><textarea rows="5" class="form-control" id="Remarks"></textarea></td>
         </tr>
-
     </table>
 
     <br />
-
-    <button id="btnNew"
-            class="btn btn-primary btn-ocp"> 
-            New 
-        </button>
-
-        <button id="btnSave"
-                class="btn btn-primary btn-ocp">
-            Save
-        </button>
-    <button class="btn btn-success btn-ocp">Submit</button>
-
-    <button class="btn btn-danger btn-ocp">Delete</button>
-
-    <button class="btn btn-warning btn-ocp">Search</button>
-
-    <button class="btn btn-secondary btn-ocp">Refresh</button>
-
-    <button class="btn btn-info btn-ocp">History</button>
-
+    <button id="btnNew" class="btn btn-primary btn-ocp">New</button>
+    <button id="btnSave" class="btn btn-primary btn-ocp">Save</button>
+    <button id="btnSubmit" class="btn btn-primary btn-ocp">Submit</button>
+    <button id="btnDelete" class="btn btn-primary btn-ocp">Delete</button>
+    <button id="btnApprove" class="btn btn-success btn-ocp">Approve</button>
+    <button id="btnReject" class="btn btn-danger btn-ocp">Reject</button>
+    <!--
+    <button id="btnSearch" class="btn btn-warning btn-ocp">Search</button>
+    <button id="btnRefresh" class="btn btn-secondary btn-ocp">Refresh</button>
+    <button id="btnHistory" class="btn btn-info btn-ocp">History</button>
+    -->
 </div>

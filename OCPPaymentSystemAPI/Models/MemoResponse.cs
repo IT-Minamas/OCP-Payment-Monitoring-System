@@ -16,6 +16,6 @@
         public string ApprovedBy { get; set; } = "";
         public DateTime? ApprovedOn { get; set; }
         public DateTime? ApprovalCreatedOn { get; set; }
-        public string MillCode { get; set; } = "";
+        public string? MillCode { get; set; } = "";
     }
 }

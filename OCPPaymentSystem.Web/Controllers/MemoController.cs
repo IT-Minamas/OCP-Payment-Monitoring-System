@@ -4,6 +4,7 @@ using OCPPaymentSystem.Web.Services;
 using System.Text.Json;
 using System.Linq;
 using OCPPaymentSystem.Web.Helpers;
+using System.Net.Http.Headers;
 
 namespace OCPPaymentSystem.Web.Controllers
 {
@@ -16,9 +17,97 @@ namespace OCPPaymentSystem.Web.Controllers
             _api = api;
         }
 
-        public IActionResult Index()
+        public IActionResult Index(
+            string memoNo = "")
         {
+
+            ViewBag.MemoNo = memoNo;
+
+
             return View();
+
+        }
+
+        [HttpPost]
+        public async Task<JsonResult> UploadAttachment(
+            IFormFile file,
+            string memoNo,
+            string type)
+        {
+            try
+            {
+                if (file == null)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = "File kosong"
+                    });
+                }
+
+
+                var form =
+                    new MultipartFormDataContent();
+
+
+                // TAMBAHKAN DULU FIELD TEXT
+
+                form.Add(
+                    new StringContent(memoNo),
+                    "memoNo");
+
+
+                form.Add(
+                    new StringContent(type),
+                    "type");
+
+
+                // BARU FILE
+
+                var fileContent =
+                    new StreamContent(
+                        file.OpenReadStream());
+
+
+                fileContent.Headers.ContentType =
+                    new MediaTypeHeaderValue(
+                        file.ContentType);
+
+
+                form.Add(
+                    fileContent,
+                    "file",
+                    file.FileName);
+
+
+                foreach (var item in form)
+                {
+                    var value =
+                        await item.ReadAsStringAsync();
+
+                    Console.WriteLine(value);
+                }
+
+                var result =
+                    await _api.PostFileAsync<ApiResponse<bool>>
+                    (
+                        "Memo/UploadAttachment",
+                        form,
+                        true,
+                        "MINAMAS-2026"
+                    );
+
+                return Json(result);
+
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = ex.ToString()
+                });
+            }
         }
 
         [HttpGet]
@@ -256,6 +345,57 @@ namespace OCPPaymentSystem.Web.Controllers
             }
         }
 
+        [HttpPost]
+        public async Task<JsonResult> Reject(
+    [FromBody] MemoRejectRequest request)
+        {
+            try
+            {
+                LoginUser? currentUser =
+                    HttpContext.Session.GetObject<LoginUser>("CurrentUser");
+
+                if (currentUser == null)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = "Session expired."
+                    });
+                }
+
+                request.UserName =
+                    currentUser.fldUserId;
+
+                request.UserIP =
+                    HttpContext.Connection.RemoteIpAddress?.ToString() ?? "";
+
+                var result =
+                    await _api.PostAsync<
+                        MemoRejectRequest,
+                        ApiResponse<bool>>
+                (
+                    "Memo/Reject",
+                    request,
+                    true,
+                    "MINAMAS-2026"
+                );
+
+                return Json(new
+                {
+                    success = result.Success,
+                    message = result.Message
+                });
+
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = ex.Message
+                });
+            }
+        }
 
         [HttpPost]
         public async Task<JsonResult> Update(
@@ -413,38 +553,6 @@ namespace OCPPaymentSystem.Web.Controllers
             }
         }
 
-        [HttpPost]
-        public async Task<JsonResult> UploadAttachment()
-        {
-            try
-            {
-                var file = Request.Form.Files[0];
-
-                bool result =
-                    await _api.UploadFileAsync(
-                        "Memo/UploadAttachment",
-                        file,
-                        new Dictionary<string, string>()
-                        {
-                    { "MemoNo", Request.Form["MemoNo"]! },
-                    { "DocumentType", Request.Form["DocumentType"]! }
-                        });
-
-                return Json(new
-                {
-                    Success = result
-                });
-            }
-            catch (Exception ex)
-            {
-                return Json(new
-                {
-                    Success = false,
-                    Message = ex.Message
-                });
-            }
-        }
-
         [HttpGet]
         public async Task<JsonResult> AttachmentList(
             string memoNo)
@@ -520,6 +628,42 @@ namespace OCPPaymentSystem.Web.Controllers
             {
                 Success = result
             });
+        }
+
+        [HttpPost]
+        public async Task<JsonResult> Supplier(
+            [FromBody] SupplierRequest request)
+        {
+            try
+            {
+                LoginUser? currentUser = HttpContext.Session.GetObject<LoginUser>("CurrentUser");
+
+
+                if (currentUser == null)
+                {
+                    return Json(new List<SupplierModel>());
+                }
+
+
+                var result =
+                    await _api.PostAsync
+                    <
+                        SupplierRequest,
+                        ApiResponse<List<SupplierModel>>
+                    >
+                (
+                    "Supplier/GetAll",
+                    request,
+                    true,
+                    "MINAMAS-2026"
+                );
+
+                return Json(result.Data);
+            }
+            catch
+            {
+                return Json(new List<SupplierModel>());
+            }
         }
     }
 }

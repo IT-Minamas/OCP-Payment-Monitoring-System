@@ -4,8 +4,8 @@ namespace OCPPaymentSystemAPI.Models
 {
     public class SupplierRequest
     {
-        [Required]
         public string MillCode { get; set; } = "";
 
+        public string CompanyCode { get; set; } = "";
     }
 }

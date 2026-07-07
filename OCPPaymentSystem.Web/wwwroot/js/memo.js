@@ -51,32 +51,35 @@ $(document).on("click", "#btnBAP", function () {
     $("#fileBAP").click();
 });
 
-$(document).on("click", "#btnFaktur", function () {
+$(document).on("click", "#btnFakturPajak", function () {
     if ($("#MemoNo").val() == "") {
         alert("Please save Memo first.");
         return;
     }
-    $("#fileFaktur").click();
+    $("#fileFakturPajak").click();
 });
 
 $("#fileInvoice").change(function () {
+
     uploadAttachment(
-        "INVOICE",
-        this.files[0]);
+        this.files[0],
+        "Invoice");
 
 });
 
 $("#fileBAP").change(function () {
+
     uploadAttachment(
-        "BAP",
-        this.files[0]);
+        this.files[0],
+        "BAP");
 
 });
 
-$("#fileFaktur").change(function () {
+$("#fileFakturPajak").change(function () {
+
     uploadAttachment(
-        "FAKTURPAJAK",
-        this.files[0]);
+        this.files[0],
+        "FakturPajak");
 
 });
 
@@ -155,6 +158,9 @@ function DeleteMemo() {
 
 function NewMemo() {
     clearForm();
+    $("#btnInvoice").hide();
+    $("#btnBAP").hide();
+    $("#btnFakturPajak").hide();
 }
 
 function loadMemo() {
@@ -210,6 +216,10 @@ function loadDetail(memoNo) {
             } else {
                 approvalMode();
             }
+
+            $("#btnInvoice").show();
+            $("#btnBAP").show();
+            $("#btnFakturPajak").show();
         });
 
 //    loadAttachment();
@@ -297,6 +307,47 @@ function submissionMode() {
     $("#btnReject").hide();
 }
 
+function rejectMemo() {
+    if ($("#MemoNo").val() == "") {
+        alert("No Memo selected.");
+        return;
+    }
+
+    let remarks = prompt("Reject Remarks :");
+
+    if (remarks == null)
+        return;
+
+    if (remarks.trim() == "") {
+        alert("Reject remarks is required.");
+        return;
+    }
+
+    $.ajax({
+        url: "/Memo/Reject",
+        type: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({
+            MemoNo: $("#MemoNo").val(),
+            Remarks: remarks
+        }),
+
+        success: function (result) {
+            if (!result.success) {
+                alert(result.message);
+                return;
+            }
+
+            alert("Memo rejected.");
+            loadDetail($("#MemoNo").val());
+            loadMemo();
+        },
+
+        error: function (xhr) {
+            alert(xhr.responseText);
+        }
+    });
+}
 function clearForm() {
     $("#MemoNo").val("");
     $("#Company").prop("selectedIndex", 0);
@@ -308,6 +359,10 @@ function clearForm() {
     $("#BAP").val("");
     $("#FakturPajak").val("");
 }
+
+$("#btnReject").click(function () {
+    rejectMemo();
+});
 
 function saveMemo() {
     if ($("#Company").val() == "") {
@@ -328,6 +383,52 @@ function saveMemo() {
     if ($("#Amount").val() == "") {
         alert("Amount cannot be empty.");
         return;
+    }
+
+    //save
+    let formData =
+        new FormData();
+
+    formData.append(
+        "MemoNo",
+        $("#MemoNo").val());
+
+    formData.append(
+        "CompanyCode",
+        $("#Company").val());
+
+    formData.append(
+        "SupplierCode",
+        $("#Supplier").val());
+
+    formData.append(
+        "MemoDate",
+        $("#MemoDate").val());
+
+    formData.append(
+        "Amount",
+        $("#Amount").val());
+
+    formData.append(
+        "Remarks",
+        $("#Remarks").val());
+
+    if ($("#fileInvoice")[0].files.length > 0) {
+        formData.append(
+            "Invoice",
+            $("#fileInvoice")[0].files[0]);
+    }
+
+    if ($("#fileBAP")[0].files.length > 0) {
+        formData.append(
+            "BAP",
+            $("#fileBAP")[0].files[0]);
+    }
+
+    if ($("#fileFakturPajak")[0].files.length > 0) {
+        formData.append(
+            "FakturPajak",
+            $("#fileFakturPajak")[0].files[0]);
     }
 
     var data =
@@ -374,50 +475,6 @@ function saveMemo() {
                 xhr.responseText
             );
         }
-    });
-
-}
-
-function uploadAttachment(
-    documentType,
-    file) {
-    var form = new FormData();
-
-    form.append(
-        "MemoNo",
-        $("#MemoNo").val());
-
-    form.append(
-        "DocumentType",
-        documentType);
-
-    form.append(
-        "File",
-        file);
-
-    $.ajax({
-
-        url: "/Memo/UploadAttachment",
-
-        type: "POST",
-
-        data: form,
-
-        processData: false,
-
-        contentType: false,
-
-        success: function (result) {
-            if (!result.success) {
-                alert(result.message);
-
-                return;
-            }
-
-            loadAttachment();
-
-        }
-
     });
 
 }
@@ -516,6 +573,75 @@ function SubmitMemo() {
         },
 
         error: function (xhr) {
+            alert(xhr.responseText);
+        }
+    });
+}
+
+$(document).ready(function () {
+
+
+    if ($("#OpenMemoNo").val() != "") {
+
+
+        loadDetail(
+            $("#OpenMemoNo").val()
+        );
+
+
+    }
+
+
+});
+
+function uploadAttachment(file, type) {
+
+    if (file == null) {
+        alert("Please select file.");
+        return;
+    }
+
+    let data =
+        new FormData();
+
+    data.append(
+        "file",
+        file,
+        file.name);
+
+    data.append(
+        "memoNo",
+        $("#MemoNo").val());
+
+    data.append(
+        "type",
+        type);
+
+    $.ajax({
+        url:
+            "/Memo/UploadAttachment",
+        type:
+            "POST",
+        data:
+            data,
+        processData:
+            false,
+        contentType:
+            false,
+
+        success: function (result) {
+            console.log(result);
+            if (result.success) {
+                alert(
+                    "Attachment uploaded successfully");
+            }
+            else {
+                alert(result.message);
+            }
+        },
+
+        error: function (xhr) {
+            console.log(xhr);
             alert(xhr.responseText);
         }
     });

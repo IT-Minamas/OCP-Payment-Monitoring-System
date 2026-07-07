@@ -53,6 +53,7 @@ builder.Services.AddScoped<WorkflowData>();
 builder.Services.AddScoped<CompanyData>();
 builder.Services.AddScoped<OCPSupplierData>();
 builder.Services.AddHttpClient<LoginData>();
+builder.Services.AddScoped<DashboardData>();
 
 builder.Services.Configure<SMTPSetting>(
     builder.Configuration.GetSection("SMTP"));

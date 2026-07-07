@@ -44,6 +44,7 @@
         <tr>
             <td class="memo-label">Company</td>
             <td>
+                <input type="hidden" id="OpenMemoNo" value="@ViewBag.MemoNo" />
                 <input type="hidden" id="MemoNo" />
                 <input type="hidden" id="ApprovalLevel" value="@user?.ApprovalLevel" />
                 <input type="hidden" id="MillCode" />
@@ -66,18 +67,46 @@
         </tr>
         <tr>
             <td>Invoice</td>
-            <td><div class="input-group">
-                    <input id="Invoice" class="form-control" readonly />
-                    <button id="btnInvoice" type="button" class="btn btn-secondary">...</button>
+            <td>
+                <div class="input-group">
+
+                    <input id="Invoice"
+                           class="form-control"
+                           readonly />
+
+                    <button id="btnInvoice"
+                            class="btn btn-secondary"
+                            type="button">
+                        ...
+                    </button>
+
+                    <input type="file"
+                           id="fileInvoice"
+                           hidden />
+
                 </div>
-                    <input type="file" id="fileInvoice" hidden />
+                <input type="file" id="fileInvoice" hidden />
             </td>
         </tr>
         <tr>
             <td>BAP</td>
             <td>
-                <div class="input-group"><input id="BAP" class="form-control" readonly />
-                    <button id="btnBAP" type="button" class="btn btn-secondary">...</button>
+                <div class="input-group">
+
+                    <input id="BAP"
+                           class="form-control"
+                           readonly />
+
+                    <button id="btnBAP"
+                            class="btn btn-secondary"
+                            type="button">
+                        ...
+                    </button>
+
+                    <input type="file"
+                           id="fileBAP"
+                           hidden />
+
                 </div>
                 <input type="file" id="fileBAP" hidden />
             </td>
@@ -86,8 +115,21 @@
             <td>Faktur Pajak</td>
             <td>
                 <div class="input-group">
-                    <input id="FakturPajak" class="form-control" readonly />
-                    <button id="btnFaktur" type="button" class="btn btn-secondary">...</button>
+
+                    <input id="FakturPajak"
+                           class="form-control"
+                           readonly />
+
+                    <button id="btnFakturPajak"
+                            class="btn btn-secondary"
+                            type="button">
+                        ...
+                    </button>
+
+                    <input type="file"
+                           id="fileFakturPajak"
+                           hidden />
+
                 </div>
                 <input type="file" id="fileFaktur" hidden />
             </td>
@@ -105,9 +147,10 @@
     <button id="btnDelete" class="btn btn-primary btn-ocp">Delete</button>
     <button id="btnApprove" class="btn btn-success btn-ocp">Approve</button>
     <button id="btnReject" class="btn btn-danger btn-ocp">Reject</button>
-    <!--
-    <button id="btnSearch" class="btn btn-warning btn-ocp">Search</button>
-    <button id="btnRefresh" class="btn btn-secondary btn-ocp">Refresh</button>
-    <button id="btnHistory" class="btn btn-info btn-ocp">History</button>
-    -->
+    @section Scripts
+    {
+        <script src="~/js/memo.js"
+                asp-append-version="true">
+        </script>
+    }
 </div>

@@ -3,5 +3,6 @@
     public class SupplierRequest
     {
         public string MillCode { get; set; } = "";
+        public string CompanyCode { get; set; } = "";
     }
 }

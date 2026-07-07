@@ -1,0 +1,179 @@
+﻿@{
+    ViewData["Title"] = "Search Memo";
+}
+
+@using OCPPaymentSystem.Web.Helpers
+@using OCPPaymentSystem.Web.Models
+
+@{
+    LoginUser? user =
+        Context.Session.GetObject<LoginUser>("CurrentUser");
+}
+
+<h4>
+    Search Memo
+</h4>
+
+<hr />
+
+
+<div class="row">
+
+
+    <div class="col-md-3">
+
+        <label>
+            Company
+        </label>
+
+        <select id="Company"
+                class="form-select">
+        </select>
+
+    </div>
+
+
+
+    <div class="col-md-3">
+
+        <label>
+            Supplier
+        </label>
+
+        <select id="Supplier"
+                class="form-select">
+        </select>
+
+    </div>
+
+
+
+    <div class="col-md-3">
+
+        <label>
+            Date From
+        </label>
+
+        <input id="DateFrom"
+               type="date"
+               class="form-control" />
+
+    </div>
+
+
+
+    <div class="col-md-3">
+
+        <label>
+            Date To
+        </label>
+
+        <input id="DateTo"
+               type="date"
+               class="form-control" />
+
+    </div>
+
+
+</div>
+
+
+
+<div class="row mt-3">
+
+
+    <div class="col-md-3">
+
+        <label>
+            Amount From
+        </label>
+
+        <input id="AmountFrom"
+               type="number"
+               class="form-control" />
+
+    </div>
+
+
+
+    <div class="col-md-3">
+
+        <label>
+            Amount To
+        </label>
+
+        <input id="AmountTo"
+               type="number"
+               class="form-control" />
+
+    </div>
+
+
+
+    <div class="col-md-6">
+
+        <label>
+            Remarks
+        </label>
+
+        <input id="Remarks"
+               class="form-control" />
+
+    </div>
+
+
+</div>
+
+
+<br />
+
+
+<button id="btnSearch"
+        class="btn btn-primary">
+
+    Search
+
+</button>
+
+
+
+<hr />
+
+
+<table class="table table-bordered table-sm">
+
+    <thead>
+
+        <tr>
+
+            <th>Memo No</th>
+
+            <th>Date</th>
+
+            <th>Company</th>
+
+            <th>Supplier</th>
+
+            <th>Amount</th>
+
+            <th>Status</th>
+
+        </tr>
+
+    </thead>
+
+
+    <tbody id="memoResult">
+    </tbody>
+
+
+</table>
+
+
+
+@section Scripts
+{
+    <script src="~/js/memoSearch.js"
+            asp-append-version="true">
+    </script>
+}

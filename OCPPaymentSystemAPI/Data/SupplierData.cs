@@ -1,5 +1,6 @@
 ﻿using Microsoft.Data.SqlClient;
 using OCPPaymentSystemAPI.Models;
+using System.Data;
 
 namespace OCPPaymentSystemAPI.Data
 {
@@ -12,7 +13,7 @@ namespace OCPPaymentSystemAPI.Data
             _database = database;
         }
 
-        public async Task<List<SupplierResponse>> GetAllAsync(string MillCode)
+        public async Task<List<SupplierResponse>> GetAllAsync(string MillCode = "", string CompanyCode = "")
         {
             List<SupplierResponse> list = new();
 
@@ -21,34 +22,45 @@ namespace OCPPaymentSystemAPI.Data
 
             await conn.OpenAsync();
 
-            string sql = @"
-
-SELECT
-
-SUPPLIER_CODE,
-SUPPLIER_NAME,
-SUPPLIER_ADDR1,
-SUPPLIER_ADDR2,
-SUPPLIER_TELNO,
-SUPPLIER_FAXNO,
-SUPPLIER_HNDNO,
-SAP_CODE
-
+            string sql =
+            @"
+SELECT *
 FROM [172.16.192.10].[SAP_Replicate_New].[dbo].[SW_SUPPLIER]
-
-WHERE
-
-Client_ID=@fldMillCode AND SUPP_TYPE=2 AND UACTIVE='Y'
-
-ORDER BY SUPPLIER_NAME
-
+WHERE SUPP_TYPE=2 
 ";
 
-            SqlCommand cmd = new(sql, conn);
-            cmd.Parameters.AddWithValue("@fldMillCode", MillCode);
+            if (!string.IsNullOrWhiteSpace(MillCode))
+            {
+                sql += @"AND Client_ID = @fldMillCode";
+            }
+            if (!string.IsNullOrWhiteSpace(CompanyCode))
+            {
+                sql += @"
+AND Client_ID IN
+(
+    SELECT fldSAPVirtualCode
+    FROM [172.16.192.10].[SAP_Replicate_New].[dbo].[vw_UnitSetup2]
+    WHERE fldCompanyCode = @CompanyCode
+    AND fldIsActive = 1
+    AND fldType = 'M'
+)
+";
+            }
 
-            SqlDataReader dr =
-                await cmd.ExecuteReaderAsync();
+            SqlCommand cmd = new(sql, conn);
+
+            if (!string.IsNullOrWhiteSpace(MillCode))
+            {
+                cmd.Parameters.Add("@fldMillCode", SqlDbType.VarChar).Value = MillCode;
+            }
+
+            if (string.IsNullOrWhiteSpace(MillCode) && !string.IsNullOrWhiteSpace(CompanyCode)
+            )
+            {
+                cmd.Parameters.Add("@CompanyCode", SqlDbType.VarChar).Value = CompanyCode;
+            }
+
+            SqlDataReader dr = await cmd.ExecuteReaderAsync();
 
             while (await dr.ReadAsync())
             {

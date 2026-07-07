@@ -4,35 +4,41 @@ using OCPPaymentSystemAPI.Models;
 
 namespace OCPPaymentSystemAPI.Controllers
 {
-    [ApiController]
     [Route("api/[controller]")]
-    public class SupplierController : BaseController
+    [ApiController]
+    public class DashboardController : BaseController
     {
-        private readonly SupplierData _supplierData;
+        private readonly DashboardData _data;
 
-        public SupplierController(
+
+        public DashboardController(
             IConfiguration configuration,
-            SupplierData supplierData)
+            DashboardData data)
             : base(configuration)
         {
-            _supplierData = supplierData;
+            _data = data;
         }
 
+
+
         [HttpPost]
-        [Route("GetAll")]
-        public async Task<IActionResult> GetAll(
-            [FromBody] SupplierRequest request)
+        [Route("Summary")]
+
+        public async Task<IActionResult> Summary(
+            [FromBody] DashboardRequest request)
         {
             if (!ValidateApiKey())
                 return ApiKeyError();
 
+
             try
             {
-                var data =
-                    await _supplierData.GetAllAsync(
-                        request.MillCode, request.CompanyCode);
+                DashboardResponse result =
+                    await _data.SummaryAsync(request);
 
-                return Success(data);
+
+                return Success(result);
+
             }
             catch (Exception ex)
             {

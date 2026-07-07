@@ -19,6 +19,24 @@ namespace OCPPaymentSystemAPI.Controllers
             _memoData = memoData;
         }
 
+        [HttpPost]
+        [Route("UploadAttachment")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UploadAttachment(
+            [FromForm] MemoAttachmentRequest request)
+        {
+            if (!ValidateApiKey())
+                return ApiKeyError();
+
+
+            var result =
+                await _memoData.UploadAttachmentAsync(
+                    request);
+
+
+            return Success(result);
+        }
+
         [HttpGet]
         [Route("GetByNo/{memoNo}")]
         public async Task<IActionResult> GetByNo(string memoNo)
@@ -222,27 +240,6 @@ namespace OCPPaymentSystemAPI.Controllers
             }
         }
 
-        [HttpPost]
-        [Route("UploadAttachment")]
-        public async Task<IActionResult> UploadAttachment(
-            [FromForm] MemoUploadRequest request)
-        {
-            if (!ValidateApiKey())
-                return ApiKeyError();
-
-            try
-            {
-                bool result =
-                    await _memoData.UploadAttachmentAsync(request);
-
-                return Success(result);
-            }
-            catch (Exception ex)
-            {
-                return Failed(ex.Message);
-            }
-        }
-
         [HttpGet]
         [Route("DownloadAttachment")]
         public async Task<IActionResult> DownloadAttachment(
@@ -286,9 +283,7 @@ namespace OCPPaymentSystemAPI.Controllers
                 bool result =
                     await _memoData.DeleteAttachmentAsync(
                         memoNo,
-                        documentType,
-                        userName,
-                        userIP);
+                        documentType);
 
                 return Success(result);
             }

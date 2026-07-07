@@ -3,50 +3,108 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+
     <title>@ViewData["Title"]</title>
 
     <link href="~/lib/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link href="~/css/site.css" rel="stylesheet" />
 </head>
 
+
 <body>
+
     <div class="top-header">
+
         <div class="header-left">
-            <span class="system-title">OCP PAYMENT SYSTEM</span>
+
+            <span class="system-title">
+                OCP PAYMENT SYSTEM
+            </span>
+
         </div>
 
+
         <div class="header-right">
+
             Welcome,
+
             <b>
-                @using System.Text.Json
-                @using OCPPaymentSystem.Web.Models
+
+            @using System.Text.Json
+            @using OCPPaymentSystem.Web.Models
 
                 @{
-                    LoginUser? user = null;
-                    string? json = Context.Session.GetString("CurrentUser");
+                    @using OCPPaymentSystem.Web.Helpers
 
-                        if (!string.IsNullOrEmpty(json))
-                        {
-                            user = JsonSerializer.Deserialize<LoginUser>(json);
-                        }
+                    LoginUser? user =
+                        Context.Session.GetObject<LoginUser>("CurrentUser");
                 }
+
                 @(
                     user?.fldUserId + " - " +
                     user?.fldName + " - " +
                     user?.BusinessTitle
                 )
+
+
             </b>
 
-            &nbsp;
-
-            <a asp-controller="Login" asp-action="Logout">Logout</a>
         </div>
+
     </div>
 
-    <div class="main-container">@RenderBody()</div>
+
+    <!-- ============================= -->
+    <!-- MENU BAR -->
+    <!-- ============================= -->
+
+
+    <div class="menu-bar">
+
+        <a asp-controller="Home"
+           asp-action="Index">
+            Dashboard
+        </a>
+
+
+        <a asp-controller="Memo"
+           asp-action="Index">
+            Input / Approve Memo
+        </a>
+
+
+        <a asp-controller="MemoSearch"
+           asp-action="Index">
+            Search Memo
+        </a>
+
+
+        <a asp-controller="Login"
+           asp-action="Logout">
+            Logout
+        </a>
+
+    </div>
+
+
+
+    <div class="main-container">
+
+        @RenderBody()
+
+    </div>
+
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
+
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/memo.js" asp-append-version="true"></script>
+
+
+    @await RenderSectionAsync(
+        "Scripts",
+        required: false
+    )
+
+
 </body>
 </html>

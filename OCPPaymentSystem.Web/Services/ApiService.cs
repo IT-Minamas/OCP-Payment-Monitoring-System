@@ -1,5 +1,7 @@
-﻿using System.Text;
+﻿using Microsoft.AspNetCore.Mvc;
+using System.Text;
 using System.Text.Json;
+using System.Net.Http.Headers;
 
 namespace OCPPaymentSystem.Web.Services
 {
@@ -34,6 +36,54 @@ namespace OCPPaymentSystem.Web.Services
             }
         }
 
+        public async Task<TResponse?> PostFileAsync<TResponse>(
+            string url,
+            MultipartFormDataContent content,
+            bool useApiKey,
+            string apiKey)
+        {
+
+            if (useApiKey)
+            {
+                _client.DefaultRequestHeaders.Remove(
+                    "x-api-key");
+
+
+                _client.DefaultRequestHeaders.Add(
+                    "x-api-key",
+                    apiKey);
+            }
+
+
+            var response =
+                await _client.PostAsync(
+                    BaseUrl + url,
+                    content);
+
+
+            string json =
+                await response.Content
+                .ReadAsStringAsync();
+
+
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new Exception(
+                    "API ERROR : " +
+                    response.StatusCode +
+                    " - " +
+                    json);
+            }
+
+
+            return JsonSerializer.Deserialize<TResponse>(
+                json,
+                new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+        }
         //-------------------------------------------------------
         // POST
         //-------------------------------------------------------

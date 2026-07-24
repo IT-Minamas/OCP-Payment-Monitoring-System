@@ -18,5 +18,8 @@
         public DateTime? approvedOn { get; set; }
         public DateTime? approvalCreatedOn { get; set; }
         public string MillCode { get; set; } = "";
+        public string? invoice { get; set; } = "";
+        public string? bap { get; set; } = "";
+        public string? fakturPajak { get; set; } = "";
     }
 }

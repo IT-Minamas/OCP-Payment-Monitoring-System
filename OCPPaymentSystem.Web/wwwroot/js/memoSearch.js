@@ -10,7 +10,7 @@ function loadCompany() {
         function (data) {
             $("#Company").empty();
             $("#Company").append(
-                "<option value=''>All</option>"
+                "<option value=''>-</option>"
             );
             $.each(data, function (i, x) {
                 $("#Company").append(
@@ -80,7 +80,11 @@ function searchMemo() {
                 ${formatAmount(x.amount)}
             </td>
             <td>${x.approvalStatus}</td>
-        </tr>
+            <td>${x.remarks}</td>
+            <td><a href="#" onclick="openAttachment('${x.memoNo}','Invoice')">${x.invoice ?? ''}</a></td>
+            <td><a href="#" onclick="openAttachment('${x.memoNo}','BAP')">${x.bap ?? ''}</a></td>
+            <td><a href="#" onclick="openAttachment('${x.memoNo}','FakturPajak')">${x.fakturPajak ?? ''}</a></td>
+            </tr>
         `);
         });
         }
@@ -101,7 +105,7 @@ $(document).ready(function () {
 function loadSupplier() {
     $("#Supplier").empty();
     $("#Supplier").append(
-        "<option value=''>All</option>"
+        "<option value=''>-</option>"
     );
 
     if ($("#Company").val() == "")
@@ -133,7 +137,7 @@ function openMemo(memoNo) {
 
     window.location.href =
 
-        "/Memo/Index?memoNo=" + memoNo;
+        "/Memo/Index?memoNo=" + Uri.EscapeDataString(memoNo);
 
 
 }
@@ -222,5 +226,19 @@ function formatDateDDMMMYYYY(value) {
 
 
     return day + "-" + month + "-" + year;
+
+}
+
+function openAttachment(
+    memoNo,
+    type) {
+
+    window.open(
+        "/Memo/DownloadAttachment?memoNo="
+        + memoNo
+        + "&type="
+        + type,
+        "_blank"
+    );
 
 }

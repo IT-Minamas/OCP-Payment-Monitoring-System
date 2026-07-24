@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using OCPPaymentSystemAPI.Controllers;
 using OCPPaymentSystemAPI.Data;
 using OCPPaymentSystemAPI.Models;
@@ -17,6 +18,67 @@ namespace OCPPaymentSystemAPI.Controllers
             : base(configuration)
         {
             _memoData = memoData;
+        }
+
+        [HttpGet]
+        [Route("SDGWeigh/Detail")]
+
+        public async Task<IActionResult>
+        SDGWeighDetail([FromQuery] string memoNo)
+        {
+
+            if (!ValidateApiKey())
+                return ApiKeyError();
+
+
+            var result =
+                await _memoData
+                .GetMemoDetailAsync(
+                    memoNo);
+
+
+            return Success(result);
+
+        }
+
+        [HttpPost]
+        [Route("SDGWeigh/Search")]
+        public async Task<IActionResult>
+        SearchSDGWeigh(
+        SDGWeighRequest request)
+        {
+
+            if (!ValidateApiKey())
+                return ApiKeyError();
+
+
+            var result =
+            await _memoData
+            .GetSDGWeighAsync(request);
+
+
+            return Success(result);
+
+        }
+
+        [HttpPost]
+        [Route("SDGWeigh/Check")]
+        public async Task<IActionResult>
+        CheckSDGWeigh(
+        SDGWeighCheckRequest request)
+        {
+
+            if (!ValidateApiKey())
+                return ApiKeyError();
+
+
+            var result =
+            await _memoData
+            .SaveSDGWeighAsync(request);
+
+
+            return Success(result);
+
         }
 
         [HttpPost]
@@ -38,8 +100,8 @@ namespace OCPPaymentSystemAPI.Controllers
         }
 
         [HttpGet]
-        [Route("GetByNo/{memoNo}")]
-        public async Task<IActionResult> GetByNo(string memoNo)
+        [Route("GetByNo")]
+        public async Task<IActionResult> GetByNo([FromQuery] string memoNo)
         {
             if (!ValidateApiKey())
                 return ApiKeyError();
@@ -196,9 +258,9 @@ namespace OCPPaymentSystemAPI.Controllers
         }
 
         [HttpGet]
-        [Route("CurrentApproval/{memoNo}")]
+        [Route("CurrentApproval")]
         public async Task<IActionResult> CurrentApproval(
-            string memoNo)
+            [FromQuery] string memoNo)
         {
             if (!ValidateApiKey())
                 return ApiKeyError();
@@ -244,27 +306,27 @@ namespace OCPPaymentSystemAPI.Controllers
         [Route("DownloadAttachment")]
         public async Task<IActionResult> DownloadAttachment(
             string memoNo,
-            string documentType)
+            string type)
         {
+
             if (!ValidateApiKey())
                 return ApiKeyError();
 
-            try
-            {
-                var file =
-                    await _memoData.DownloadAttachmentAsync(
-                        memoNo,
-                        documentType);
 
-                return File(
-                    file.FileData,
-                    file.ContentType,
-                    file.FileName);
-            }
-            catch (Exception ex)
-            {
-                return Failed(ex.Message);
-            }
+            var file =
+                await _memoData.DownloadAttachmentAsync(
+                    memoNo,
+                    type);
+
+
+            if (file == null)
+                return NotFound();
+
+
+            return File(
+                file.FileData,
+                file.ContentType,
+                file.FileName);
         }
 
         [HttpDelete]
@@ -294,25 +356,23 @@ namespace OCPPaymentSystemAPI.Controllers
         }
 
         [HttpGet]
-        [Route("AttachmentList/{memoNo}")]
+        [Route("AttachmentList")]
         public async Task<IActionResult>
-        AttachmentList(string memoNo)
+            AttachmentList([FromQuery] string memoNo)
         {
+
             if (!ValidateApiKey())
                 return ApiKeyError();
 
-            try
-            {
-                var data =
-                    await _memoData
-                    .GetAttachmentListAsync(memoNo);
 
-                return Success(data);
-            }
-            catch (Exception ex)
-            {
-                return Failed(ex.Message);
-            }
+            var result =
+                await _memoData
+                .GetAttachmentListAsync(
+                    memoNo);
+
+
+            return Success(result);
+
         }
     }
 

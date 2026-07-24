@@ -71,7 +71,6 @@ namespace OCPPaymentSystem.Web.Controllers
         }
 
 
-
         [HttpPost]
         public async Task<JsonResult> Search(
             [FromBody] MemoSearchRequest request)

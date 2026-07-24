@@ -2,6 +2,7 @@
 using System.Text;
 using System.Text.Json;
 using System.Net.Http.Headers;
+using OCPPaymentSystem.Web.Models;
 
 namespace OCPPaymentSystem.Web.Services
 {
@@ -34,6 +35,58 @@ namespace OCPPaymentSystem.Web.Services
                     "x-api-key",
                     apiKey);
             }
+        }
+
+        public async Task<MemoAttachmentDownload> GetFileAsync(
+    string url,
+    bool useApiKey,
+    string apiKey)
+        {
+
+            if (useApiKey)
+            {
+                _client.DefaultRequestHeaders.Remove(
+                    "x-api-key");
+
+
+                _client.DefaultRequestHeaders.Add(
+                    "x-api-key",
+                    apiKey);
+            }
+
+
+            var response =
+                await _client.GetAsync(
+                    BaseUrl + url);
+
+
+            byte[] data =
+                await response.Content
+                .ReadAsByteArrayAsync();
+
+
+            string fileName =
+                response.Content.Headers
+                .ContentDisposition?
+                .FileName?
+                .Replace("\"", "")
+                ?? "attachment";
+
+
+            string contentType =
+                response.Content.Headers
+                .ContentType?
+                .ToString()
+                ?? "application/octet-stream";
+
+
+            return new MemoAttachmentDownload
+            {
+                FileName = fileName,
+                ContentType = contentType,
+                FileData = data
+            };
+
         }
 
         public async Task<TResponse?> PostFileAsync<TResponse>(

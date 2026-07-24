@@ -8,6 +8,29 @@
     } else {
         approvalMode();
     }
+
+    $("#Invoice").click(function () {
+
+        downloadAttachment(
+            "Invoice");
+
+    });
+
+
+    $("#BAP").click(function () {
+
+        downloadAttachment(
+            "BAP");
+
+    });
+
+
+    $("#FakturPajak").click(function () {
+
+        downloadAttachment(
+            "FakturPajak");
+
+    });
 });
 
 $(document).on("click", "#tblMemo tr", function () {
@@ -169,7 +192,7 @@ function loadMemo() {
         $.each(data, function (i, x) {
             var tr = $("<tr>");
 
-            tr.append("<td>" + x.memoNo + "</td>");
+            tr.append("<td>" + (i + 1) + "</td>");
             tr.append("<td>" + x.companyCode + "</td>");
             tr.append("<td>" + x.supplierName + "</td>");
 
@@ -220,9 +243,11 @@ function loadDetail(memoNo) {
             $("#btnInvoice").show();
             $("#btnBAP").show();
             $("#btnFakturPajak").show();
+
+            loadAttachment();
+            loadSDGWeighDetail();
         });
 
-//    loadAttachment();
 }
 function approveMemo() {
     if ($("#MemoNo").val() == "") {
@@ -480,51 +505,42 @@ function saveMemo() {
 }
 
 function loadAttachment() {
+
+    let memoNo =
+        $("#MemoNo").val();
+
+
+    if (memoNo == "")
+        return;
+
+
     $.get(
-
         "/Memo/AttachmentList",
-
         {
-            memoNo: $("#MemoNo").val()
+            memoNo: memoNo
         },
 
         function (data) {
             $("#Invoice").val("");
-
             $("#BAP").val("");
-
             $("#FakturPajak").val("");
 
-            $.each(data, function (i, x) {
-                switch (x.documentType) {
-                    case "INVOICE":
+            $.each(
+                data,
+                function (i, x) {
+                    if (x.documentType == "Invoice")
+                        $("#Invoice").val(x.fileName);
 
-                        $("#Invoice")
-                            .val(x.fileName);
+                    if (x.documentType == "BAP")
+                        $("#BAP").val(x.fileName);
 
-                        break;
-
-                    case "BAP":
-
-                        $("#BAP")
-                            .val(x.fileName);
-
-                        break;
-
-                    case "FAKTURPAJAK":
-
-                        $("#FakturPajak")
-                            .val(x.fileName);
-
-                        break;
-                }
-
-            });
+                    if (x.documentType == "FakturPajak")
+                        $("#FakturPajak").val(x.fileName);
+                });
 
         });
 
 }
-
 function formatDate(value) {
     if (!value)
         return "";
@@ -630,14 +646,35 @@ function uploadAttachment(file, type) {
             false,
 
         success: function (result) {
+
             console.log(result);
+
+
             if (result.success) {
+
                 alert(
                     "Attachment uploaded successfully");
+
+
+                if (type == "Invoice") {
+                    $("#Invoice").val(file.name);
+                }
+
+
+                if (type == "BAP") {
+                    $("#BAP").val(file.name);
+                }
+
+
+                if (type == "FakturPajak") {
+                    $("#FakturPajak").val(file.name);
+                }
+
             }
             else {
                 alert(result.message);
             }
+
         },
 
         error: function (xhr) {
@@ -645,4 +682,179 @@ function uploadAttachment(file, type) {
             alert(xhr.responseText);
         }
     });
+}
+
+function downloadAttachment(type) {
+
+    if ($("#MemoNo").val() == "") {
+        return;
+    }
+
+
+    window.open(
+        "/Memo/DownloadAttachment?memoNo="
+        + $("#MemoNo").val()
+        + "&type="
+        + type,
+        "_blank"
+    );
+
+}
+
+$("#btnSDGWeigh").click(function () {
+
+    let memoNo =
+        $("#MemoNo").val();
+
+
+    if (memoNo == "") {
+        alert(
+            "Save Memo first");
+        return;
+    }
+
+
+    window.open(
+        "/Memo/SDGWeighChecking"
+        + "?memoNo="
+        + memoNo
+
+        + "&supplierCode="
+        + $("#Supplier").val()
+
+        + "&millCode="
+        + $("#MillCode").val(),
+
+        "_blank"
+    );
+
+});
+
+$("#btnSDGWeigh").click(function () {
+
+
+    if ($("#MemoNo").val() == "") {
+
+        alert(
+            "Please save Memo first.");
+
+        return;
+    }
+
+
+    window.open(
+
+        "/Memo/SDGWeighChecking"
+        + "?memoNo="
+        + $("#MemoNo").val()
+
+        + "&supplierCode="
+        + $("#Supplier").val()
+
+        + "&millCode="
+        + $("#MillCode").val(),
+
+        "_blank"
+
+    );
+
+
+});
+
+function loadSDGWeighDetail() {
+    let memoNo =
+        $("#MemoNo").val();
+    if (memoNo == "")
+        return;
+
+    $.ajax({
+        url:
+            "/Memo/SDGWeighDetail",
+        type:
+            "GET",
+        data:
+        {
+            memoNo: memoNo
+        },
+
+        success: function (data) {
+            $("#sdgDetailList").empty();
+
+            let totalNett = 0;
+            let totalDeduction = 0;
+            //console.table(data);
+
+            $.each(data, function (i, x) {
+                totalNett +=
+                    x.nettWeight;
+                totalDeduction +=
+                    x.deD_WT;
+                $("#sdgDetailList")
+                    .append(`
+<tr>
+<td>
+${formatDate(x.postDate)}
+</td>
+<td>
+${x.serialNo}
+</td>
+<td>
+${x.lorryNo}
+</td>
+<td>
+${x.driverCode}
+</td>
+<td class="text-end">
+${x.bunchWeight}
+</td>
+
+<td class="text-end">
+${formatNumber(x.weightIn)}
+</td>
+
+<td class="text-end">
+${formatNumber(x.weightOut)}
+</td>
+
+<td class="text-end">
+${formatNumber(x.nettWeight)}
+</td>
+
+<td class="text-end">
+${formatNumber(x.deD_WT)}
+</td>
+
+</tr>
+`);
+            });
+
+            $("#sdgSummary")
+                .html(
+                   `
+Ticket : ${data.length}
+&nbsp;&nbsp;
+
+Nett :
+${formatNumber(totalNett)}
+KG
+
+&nbsp;&nbsp;
+
+Deduction :
+${formatNumber(totalDeduction)}
+KG
+`
+                );
+        }
+    });
+}
+
+function formatNumber(x) {
+
+    if (x == null)
+        return "0";
+
+
+    return x.toLocaleString();
+
 }

@@ -11,9 +11,9 @@ namespace OCPPaymentSystemAPI.Helpers
             _runningNumber = runningNumber;
         }
 
-        public async Task<string> GenerateMemoNumberAsync()
+        public async Task<string> GenerateMemoNumberAsync(string companyCode)
         {
-            return await _runningNumber.GenerateMemoNumberAsync();
+            return await _runningNumber.GenerateMemoNumberAsync(companyCode);
         }
     }
 }

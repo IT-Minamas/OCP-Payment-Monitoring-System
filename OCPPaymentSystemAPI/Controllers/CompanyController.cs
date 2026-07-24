@@ -38,5 +38,26 @@ namespace OCPPaymentSystemAPI.Controllers
                 return Failed(ex.Message);
             }
         }
+
+        [HttpPost]
+        [Route("SearchMill")]
+        public async Task<IActionResult> SearchMill(
+            [FromBody] CompanyRequest request)
+        {
+            if (!ValidateApiKey())
+                return ApiKeyError();
+
+            try
+            {
+                var result =
+                    await _data.SearchMillAsync();
+
+                return Success(result);
+            }
+            catch (Exception ex)
+            {
+                return Failed(ex.Message);
+            }
+        }
     }
 }

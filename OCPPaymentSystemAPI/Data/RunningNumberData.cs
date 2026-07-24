@@ -11,97 +11,200 @@ namespace OCPPaymentSystemAPI.Data
             _database = database;
         }
 
-        public async Task<string> GenerateMemoNumberAsync()
+        public async Task<string> GenerateMemoNumberAsync(
+            string companyCode)
         {
-            using SqlConnection conn = _database.GetConnection();
+            using SqlConnection conn =
+                _database.GetConnection();
 
             await conn.OpenAsync();
 
-            SqlTransaction trans = conn.BeginTransaction();
+            SqlTransaction trans =
+                conn.BeginTransaction();
 
             try
             {
-                string yearMonth = DateTime.Now.ToString("yyyyMM");
+                string yearMonth =
+                    DateTime.Now.ToString("yyyyMM");
 
-                string sql = @"
+                int year =
+                    DateTime.Now.Year;
 
-SELECT fldLastNumber
+                int month =
+                    DateTime.Now.Month;
 
-FROM tbdRunningNumber
 
-WHERE fldModule=@Module
+                string sql =
+                @"
+        SELECT fldLastNumber
+        FROM tbdRunningNumber
+        WHERE fldModule=@Module
+        AND fldCompanyCode=@CompanyCode
+        AND fldYearMonth=@YearMonth
+        ";
 
-AND fldYearMonth=@YearMonth
 
-";
+                SqlCommand cmd =
+                    new(sql, conn, trans);
 
-                SqlCommand cmd = new(sql, conn, trans);
 
-                cmd.Parameters.Add("@Module", System.Data.SqlDbType.NVarChar).Value = "MEM";
+                cmd.Parameters.AddWithValue(
+                    "@Module",
+                    "MEM");
 
-                cmd.Parameters.Add("@YearMonth", System.Data.SqlDbType.Char).Value = yearMonth;
 
-                object obj = await cmd.ExecuteScalarAsync();
+                cmd.Parameters.AddWithValue(
+                    "@CompanyCode",
+                    companyCode);
 
-                int runningNo = 1;
+
+                cmd.Parameters.AddWithValue(
+                    "@YearMonth",
+                    yearMonth);
+
+
+                object obj =
+                    await cmd.ExecuteScalarAsync();
+
+
+                int runningNo;
+
 
                 if (obj == null)
                 {
-                    sql = @"
+                    runningNo = 1;
 
-INSERT INTO tbdRunningNumber
 
-VALUES
+                    sql =
+                    @"
+            INSERT INTO tbdRunningNumber
+            (
+                fldModule,
+                fldCompanyCode,
+                fldYearMonth,
+                fldLastNumber
+            )
+            VALUES
+            (
+                @Module,
+                @CompanyCode,
+                @YearMonth,
+                @RunningNo
+            )
+            ";
 
-(@Module,@YearMonth,1)
 
-";
+                    cmd =
+                        new(sql, conn, trans);
 
-                    cmd = new(sql, conn, trans);
 
-                    cmd.Parameters.Add("@Module", System.Data.SqlDbType.NVarChar).Value = "MEM";
+                    cmd.Parameters.AddWithValue(
+                        "@Module",
+                        "MEM");
 
-                    cmd.Parameters.Add("@YearMonth", System.Data.SqlDbType.Char).Value = yearMonth;
+
+                    cmd.Parameters.AddWithValue(
+                        "@CompanyCode",
+                        companyCode);
+
+
+                    cmd.Parameters.AddWithValue(
+                        "@YearMonth",
+                        yearMonth);
+
+
+                    cmd.Parameters.AddWithValue(
+                        "@RunningNo",
+                        runningNo);
+
 
                     await cmd.ExecuteNonQueryAsync();
                 }
                 else
                 {
-                    runningNo = Convert.ToInt32(obj) + 1;
+                    runningNo =
+                        Convert.ToInt32(obj) + 1;
 
-                    sql = @"
 
-UPDATE tbdRunningNumber
+                    sql =
+                    @"
+            UPDATE tbdRunningNumber
+            SET fldLastNumber=@RunningNo
+            WHERE fldModule=@Module
+            AND fldCompanyCode=@CompanyCode
+            AND fldYearMonth=@YearMonth
+            ";
 
-SET fldLastNumber=@RunningNo
 
-WHERE fldModule=@Module
+                    cmd =
+                        new(sql, conn, trans);
 
-AND fldYearMonth=@YearMonth
 
-";
+                    cmd.Parameters.AddWithValue(
+                        "@RunningNo",
+                        runningNo);
 
-                    cmd = new(sql, conn, trans);
 
-                    cmd.Parameters.Add("@RunningNo", System.Data.SqlDbType.Int).Value = runningNo;
+                    cmd.Parameters.AddWithValue(
+                        "@Module",
+                        "MEM");
 
-                    cmd.Parameters.Add("@Module", System.Data.SqlDbType.NVarChar).Value = "MEM";
 
-                    cmd.Parameters.Add("@YearMonth", System.Data.SqlDbType.Char).Value = yearMonth;
+                    cmd.Parameters.AddWithValue(
+                        "@CompanyCode",
+                        companyCode);
+
+
+                    cmd.Parameters.AddWithValue(
+                        "@YearMonth",
+                        yearMonth);
+
 
                     await cmd.ExecuteNonQueryAsync();
+
                 }
+
 
                 trans.Commit();
 
-                return $"MEM{yearMonth}{runningNo:00000}";
+
+                string romanMonth =
+                    ToRoman(month);
+
+
+                return
+                    $"M.{runningNo}/OP-TREA/{companyCode}-TBS/{romanMonth}/{year}";
+
             }
             catch
             {
                 trans.Rollback();
-
                 throw;
             }
         }
+
+
+        private string ToRoman(int month)
+        {
+            string[] roman =
+            {
+        "",
+        "I",
+        "II",
+        "III",
+        "IV",
+        "V",
+        "VI",
+        "VII",
+        "VIII",
+        "IX",
+        "X",
+        "XI",
+        "XII"
+            };
+
+            return roman[month];
+        }
+
     }
 }

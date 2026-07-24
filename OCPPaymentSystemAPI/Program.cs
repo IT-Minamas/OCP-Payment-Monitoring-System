@@ -3,6 +3,10 @@ using OCPPaymentSystemAPI.Data;
 using OCPPaymentSystemAPI.Helpers;
 using OCPPaymentSystemAPI.Models;
 
+//RZK
+using QuestPDF.Infrastructure;
+QuestPDF.Settings.License = LicenseType.Community;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
@@ -54,6 +58,7 @@ builder.Services.AddScoped<CompanyData>();
 builder.Services.AddScoped<OCPSupplierData>();
 builder.Services.AddHttpClient<LoginData>();
 builder.Services.AddScoped<DashboardData>();
+builder.Services.AddScoped<PriceRangeData>();
 
 builder.Services.Configure<SMTPSetting>(
     builder.Configuration.GetSection("SMTP"));

@@ -1,0 +1,78 @@
+﻿<h3>
+    SDGWeigh Checking
+</h3>
+
+<input type="hidden"
+       id="MemoNo"
+       value="@ViewBag.MemoNo">
+
+<input type="hidden"
+       id="MillCode"
+       value="@ViewBag.MillCode">
+
+<label>
+    Supplier
+</label>
+
+<input id="Supplier"
+       class="form-control"
+       value="@ViewBag.SupplierCode"
+       readonly>
+
+<br>
+
+<label>Date From</label>
+<input type="date"
+       id="DateFrom"
+       class="form-control">
+
+<label>Date To</label>
+<input type="date"
+       id="DateTo"
+       class="form-control">
+<br>
+
+<button id="btnSearch"class="btn btn-primary">Search</button>
+<button id="btnSaveSDGWeigh" class="btn btn-primary">Save</button>
+<hr>
+
+
+<table class="table table-bordered">
+
+    <thead>
+
+        <tr>
+
+            <th>
+                <input type="checkbox"
+                       id="chkAll">
+            </th>
+
+            <th>Lorry</th>
+            <th>Driver</th>
+            <th>DO No</th>
+            <th>Ticket</th>
+            <th>Date</th>
+            <th>Weight In</th>
+            <th>Weight Out</th>
+            <th>Netto</th>
+            <th>Deduction</th>
+            <th>Memo No</th>
+        </tr>
+
+    </thead>
+
+
+    <tbody id="result">
+    </tbody>
+
+
+</table>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+<script src="~/js/sdgweigh.js"
+        asp-append-version="true">
+</script>

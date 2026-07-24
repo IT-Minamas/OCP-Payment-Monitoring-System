@@ -1,4 +1,4 @@
-﻿namespace OCPPaymentSystemAPI.Models
+﻿namespace OCPPaymentSystem.Web.Models
 {
     public class SDGWeighRequest
     {

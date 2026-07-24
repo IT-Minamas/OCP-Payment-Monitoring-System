@@ -28,6 +28,104 @@ namespace OCPPaymentSystem.Web.Controllers
 
         }
 
+
+        [HttpGet]
+        public IActionResult SDGWeighChecking(
+            string memoNo,
+            string supplierCode,
+            string millCode)
+        {
+
+            ViewBag.MemoNo =
+                memoNo;
+
+
+            ViewBag.SupplierCode =
+                supplierCode;
+
+
+            ViewBag.MillCode =
+                millCode;
+
+
+            return View();
+
+        }
+
+
+        [HttpGet]
+        public async Task<JsonResult>
+        SDGWeighDetail(
+            string memoNo)
+        {
+
+            var result =
+            await _api.GetAsync
+            <
+              ApiResponse<List<MemoSDGWeighDetailModel>>
+            >
+            (
+                "Memo/SDGWeigh/Detail?memoNo=" + Uri.EscapeDataString(memoNo),
+                true,
+                "MINAMAS-2026"
+            );
+
+
+            return Json(result.Data);
+
+        }
+
+        [HttpPost]
+        public async Task<JsonResult> SearchSDGWeigh(
+            [FromBody] SDGWeighRequest request)
+        {
+
+            var result =
+                await _api.PostAsync
+                <
+                    SDGWeighRequest,
+                    ApiResponse<List<SDGWeighModel>>
+                >
+                (
+                    "Memo/SDGWeigh/Search",
+                    request,
+                    true,
+                    "MINAMAS-2026"
+                );
+
+
+            return Json(result.Data);
+
+        }
+
+        [HttpPost]
+        public async Task<JsonResult>
+        CheckSDGWeigh(
+            [FromBody]
+    MemoSDGWeighSaveRequest request)
+        {
+
+
+            var result =
+                await _api.PostAsync
+                <
+                    MemoSDGWeighSaveRequest,
+                    ApiResponse<bool>
+                >
+                (
+                    "Memo/SDGWeigh/Check",
+                    request,
+                    true,
+                    "MINAMAS-2026"
+                );
+
+
+            return Json(
+                result!.Data
+            );
+
+
+        }
         [HttpPost]
         public async Task<JsonResult> UploadAttachment(
             IFormFile file,
@@ -236,7 +334,7 @@ namespace OCPPaymentSystem.Web.Controllers
         {
             var result =
                 await _api.GetAsync<ApiResponse<MemoDetailModel>>(
-                    "Memo/GetByNo/" + memoNo,
+                    "Memo/GetByNo?memoNo=" + Uri.EscapeDataString(memoNo),
                     true,
                     "MINAMAS-2026");
 
@@ -557,47 +655,64 @@ namespace OCPPaymentSystem.Web.Controllers
         public async Task<JsonResult> AttachmentList(
             string memoNo)
         {
-            var data =
-                await _api.GetAsync<List<MemoAttachmentModel>>
+
+            var result =
+                await _api.GetAsync
+                <
+                    ApiResponse<List<MemoAttachmentModel>>
+                >
                 (
-                    "Memo/AttachmentList/" + memoNo
+                    "Memo/AttachmentList?memoNo=" + Uri.EscapeDataString(memoNo),
+                    true,
+                    "MINAMAS-2026"
                 );
 
-            return Json(data);
+
+            return Json(result.Data);
+
         }
 
-        public async Task<IActionResult>
-        DownloadAttachment(
+        [HttpGet]
+        public async Task<IActionResult> DownloadAttachment(
             string memoNo,
-            string documentType)
+            string type)
         {
-            HttpResponseMessage response =
+            var response =
                 await _api.DownloadAsync(
+                    "Memo/DownloadAttachment?memoNo="
+                    + Uri.EscapeDataString(memoNo)
+                    + "&type="
+                    + type,
+                    true,
+                    "MINAMAS-2026");
 
-                    "Memo/DownloadAttachment?" +
 
-                    "memoNo=" + memoNo +
-
-                    "&documentType=" + documentType);
-
-            byte[] bytes =
+            byte[] data =
                 await response.Content
-                .ReadAsByteArrayAsync();
+                    .ReadAsByteArrayAsync();
+
 
             string contentType =
-                response.Content.Headers.ContentType!
-                .MediaType!;
+                response.Content.Headers.ContentType?
+                .ToString()
+                ?? "application/octet-stream";
+
 
             string fileName =
-                response.Content.Headers
-                .ContentDisposition!
-                .FileName!
-                .Replace("\"", "");
+                response.Content.Headers.ContentDisposition?
+                .FileName?
+                .Replace("\"", "")
+                ?? "attachment";
+
+
+            Response.Headers.Append(
+                "Content-Disposition",
+                $"inline; filename=\"{fileName}\"");
+
 
             return File(
-                bytes,
-                contentType,
-                fileName);
+                data,
+                contentType);
         }
 
         [HttpDelete]
@@ -611,7 +726,7 @@ namespace OCPPaymentSystem.Web.Controllers
 
                     "Memo/DeleteAttachment?" +
 
-                    "memoNo=" + memoNo +
+                    "memoNo=" + Uri.EscapeDataString(memoNo) +
 
                     "&documentType=" + documentType +
 

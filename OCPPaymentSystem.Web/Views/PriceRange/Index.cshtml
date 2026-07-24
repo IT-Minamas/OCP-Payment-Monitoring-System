@@ -1,0 +1,237 @@
+﻿@{
+    ViewData["Title"] = "Master Price Range";
+}
+
+<div class="container-fluid">
+
+    <div class="card">
+
+        <div class="card-header">
+            <b>PRICE RANGE LIST</b>
+        </div>
+
+        <div class="card-body">
+
+            <div class="row mb-3">
+
+                <div class="col-md-3">
+                    <label>Mill</label>
+                    <select id="Mill" class="form-control"></select>
+                </div>
+
+                <div class="col-md-2">
+                    <label>Date From</label>
+                    <input type="date" id="DateFrom" class="form-control" />
+                </div>
+
+                <div class="col-md-2">
+                    <label>Date To</label>
+                    <input type="date" id="DateTo" class="form-control" />
+                </div>
+
+                <div class="col-md-2">
+                    <label>&nbsp;</label><br />
+                    <button id="btnSearch" class="btn btn-primary">
+                        Search
+                    </button>
+                </div>
+
+            </div>
+
+            <table id="tblPriceRange"
+                   class="table table-bordered table-hover table-striped">
+
+                <thead>
+
+                    <tr>
+
+                        <th width="50">No</th>
+
+                        <th width="120">Mill</th>
+
+                        <th width="120">Date From</th>
+
+                        <th width="120">Date To</th>
+
+                        <th width="150" class="text-end">
+                            Price From
+                        </th>
+
+                        <th width="150" class="text-end">
+                            Price To
+                        </th>
+
+                        <th>
+                            Attachment
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+    <br />
+
+    <div class="card">
+
+        <div class="card-header">
+            <b>PRICE RANGE DETAIL</b>
+        </div>
+
+        <div class="card-body">
+
+            <input type="hidden" id="ID" />
+
+            <div class="row mb-3">
+
+                <label class="col-md-2">
+                    Mill
+                </label>
+
+                <div class="col-md-4">
+
+                    <select id="DetailMill"
+                            class="form-control">
+                    </select>
+
+                </div>
+
+            </div>
+
+            <div class="row mb-3">
+
+                <label class="col-md-2">
+                    Date From
+                </label>
+
+                <div class="col-md-3">
+
+                    <input type="date"
+                           id="DetailDateFrom"
+                           class="form-control" />
+
+                </div>
+
+            </div>
+
+            <div class="row mb-3">
+
+                <label class="col-md-2">
+                    Date To
+                </label>
+
+                <div class="col-md-3">
+
+                    <input type="date"
+                           id="DetailDateTo"
+                           class="form-control" />
+
+                </div>
+
+            </div>
+
+            <div class="row mb-3">
+
+                <label class="col-md-2">
+                    Price Range From
+                </label>
+
+                <div class="col-md-3">
+
+                    <input id="PriceFrom"
+                           class="form-control text-end" />
+
+                </div>
+
+            </div>
+
+            <div class="row mb-3">
+
+                <label class="col-md-2">
+                    Price Range To
+                </label>
+
+                <div class="col-md-3">
+
+                    <input id="PriceTo"
+                           class="form-control text-end" />
+
+                </div>
+
+            </div>
+
+            <div class="row mb-3">
+
+                <label class="col-md-2">
+                    Attachment
+                </label>
+
+                <div class="col-md-6">
+
+                    <div class="input-group">
+
+                        <input type="text"
+                               id="Attachment"
+                               class="form-control"
+                               readonly
+                               style="cursor:pointer;background-color:white;" />
+
+                        <button id="btnAttachment"
+                                class="btn btn-secondary"
+                                type="button">
+
+                            ...
+
+                        </button>
+
+                    </div>
+
+                    <input type="file"
+                           id="fileAttachment"
+                           style="display:none" />
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <br />
+
+    <button id="btnNew"
+            class="btn btn-primary">
+
+        New
+
+    </button>
+
+    <button id="btnSave"
+            class="btn btn-primary">
+
+        Save
+
+    </button>
+
+    <button id="btnDelete"
+            class="btn btn-primary">
+
+        Delete
+
+    </button>
+
+</div>
+
+@section Scripts {
+
+    <script src="~/js/priceRange.js" asp-append-version="true"></script>
+}

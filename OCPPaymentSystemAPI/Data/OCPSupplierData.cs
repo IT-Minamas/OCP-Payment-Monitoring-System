@@ -1,5 +1,6 @@
 ﻿using Microsoft.Data.SqlClient;
 using OCPPaymentSystemAPI.Models;
+using System.Data;
 
 namespace OCPPaymentSystemAPI.Data
 {
@@ -10,6 +11,96 @@ namespace OCPPaymentSystemAPI.Data
         public OCPSupplierData(Database database)
         {
             _database = database;
+        }
+
+        public async Task<List<SupplierBankModel>> GetBankAsync(
+    SupplierBankRequest request)
+        {
+            List<SupplierBankModel> list = new();
+
+            using SqlConnection conn =
+                _database.GetConnection();
+
+            await conn.OpenAsync();
+
+            string sql = @"
+SELECT
+    b.fldBankCode,
+    b.fldBankAccountNo,
+    b.fldNameOnBankAccount,
+    b.fldBankName,
+    b.fldBankAddress1,
+    b.fldBankAddress2,
+    b.fldSKN
+FROM [172.16.192.10].[SAP_Replicate_New].[dbo].[SW_SUPPLIER] AS a
+JOIN vw_Supplier AS b
+    ON a.Sap_Code = b.fldCode
+WHERE a.SUPPLIER_CODE = @SupplierCode
+  AND a.Client_ID = @MillCode
+  AND a.SUPP_TYPE = 2
+  AND a.Sap_Code <> ''
+  AND a.uActive = 'Y'
+";
+
+            using SqlCommand cmd =
+                new SqlCommand(sql, conn);
+
+            cmd.Parameters.Add(
+                "@SupplierCode",
+                SqlDbType.NVarChar)
+                .Value = request.SupplierCode;
+
+            cmd.Parameters.Add(
+                "@MillCode",
+                SqlDbType.NVarChar)
+                .Value = request.MillCode;
+
+            using SqlDataReader dr =
+                await cmd.ExecuteReaderAsync();
+
+            while (await dr.ReadAsync())
+            {
+                list.Add(
+                    new SupplierBankModel
+                    {
+                        Code =
+                            dr["fldBankCode"] == DBNull.Value
+                                ? ""
+                                : dr["fldBankCode"].ToString() ?? "",
+
+                        BankAccountNo =
+                            dr["fldBankAccountNo"] == DBNull.Value
+                                ? ""
+                                : dr["fldBankAccountNo"].ToString() ?? "",
+
+                        NameOnBankAccount =
+                            dr["fldNameOnBankAccount"] == DBNull.Value
+                                ? ""
+                                : dr["fldNameOnBankAccount"].ToString() ?? "",
+
+                        BankName =
+                            dr["fldBankName"] == DBNull.Value
+                                ? ""
+                                : dr["fldBankName"].ToString() ?? "",
+
+                        BankAddress1 =
+                            dr["fldBankAddress1"] == DBNull.Value
+                                ? ""
+                                : dr["fldBankAddress1"].ToString() ?? "",
+
+                        BankAddress2 =
+                            dr["fldBankAddress2"] == DBNull.Value
+                                ? ""
+                                : dr["fldBankAddress2"].ToString() ?? "",
+
+                        SKN =
+                            dr["fldSKN"] == DBNull.Value
+                                ? ""
+                                : dr["fldSKN"].ToString() ?? ""
+                    });
+            }
+
+            return list;
         }
 
         public async Task<List<OCPSupplierResponse>> SearchAsync(

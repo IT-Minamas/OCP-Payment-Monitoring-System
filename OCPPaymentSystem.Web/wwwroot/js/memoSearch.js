@@ -68,6 +68,7 @@ function searchMemo() {
 
         }),
         success: function (data) {
+            console.table(data);
             $("#memoResult").empty();
             $.each(data, function (i, x) {
                 $("#memoResult").append(`
@@ -81,6 +82,7 @@ function searchMemo() {
             </td>
             <td>${x.approvalStatus}</td>
             <td>${x.remarks}</td>
+            <td><a href="#" onclick="openAttachment('${x.memoNo}','Memo')">${x.memo ?? ''}</a></td>
             <td><a href="#" onclick="openAttachment('${x.memoNo}','Invoice')">${x.invoice ?? ''}</a></td>
             <td><a href="#" onclick="openAttachment('${x.memoNo}','BAP')">${x.bap ?? ''}</a></td>
             <td><a href="#" onclick="openAttachment('${x.memoNo}','FakturPajak')">${x.fakturPajak ?? ''}</a></td>

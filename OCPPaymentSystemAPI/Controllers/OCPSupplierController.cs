@@ -17,6 +17,35 @@ namespace OCPPaymentSystemAPI.Controllers
             _data = data;
         }
 
+        [HttpGet]
+        [Route("Bank")]
+        public async Task<IActionResult> Bank(
+            [FromQuery] string supplierCode,
+            [FromQuery] string millCode)
+        {
+            if (!ValidateApiKey())
+                return ApiKeyError();
+
+            try
+            {
+                SupplierBankRequest request =
+                    new SupplierBankRequest
+                    {
+                        SupplierCode = supplierCode,
+                        MillCode = millCode
+                    };
+
+                var result =
+                    await _data.GetBankAsync(request);
+
+                return Success(result);
+            }
+            catch (Exception ex)
+            {
+                return Failed(ex.Message);
+            }
+        }
+
         [HttpPost]
         [Route("Search")]
         public async Task<IActionResult> Search(

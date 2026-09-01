@@ -107,6 +107,25 @@ AND fldIsActive=1
             return (to, cc);
         }
 
+
+        private async Task<string> GetMillManagerEmailAsync(SqlConnection conn, string memoNo)
+        {
+            string sql = @"
+SELECT TOP 1 mp.Email
+FROM tbdApproval a
+JOIN [CentralAuthentication].dbo.tblManPower mp
+    ON a.fldApprovedBy COLLATE Latin1_General_CI_AI=mp.Employee_ID COLLATE Latin1_General_CI_AI
+WHERE a.fldNo=@MemoNo
+AND a.fldApprovalLevel=10
+ORDER BY mp.Period DESC";
+
+            SqlCommand cmd = new(sql, conn);
+            cmd.Parameters.Add("@MemoNo", SqlDbType.NVarChar).Value = memoNo;
+
+            object result = await cmd.ExecuteScalarAsync();
+            return result?.ToString() ?? "";
+        }
+
         private async Task UpdateEmailSentAsync(
             SqlConnection conn,
             string memoNo,

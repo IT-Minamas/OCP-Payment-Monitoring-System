@@ -20,14 +20,49 @@ namespace OCPPaymentSystem.Web.Controllers
         public IActionResult Index(
             string memoNo = "")
         {
+            LoginUser? user =
+                HttpContext.Session
+                .GetObject<LoginUser>("CurrentUser");
+
+
+            if (user == null)
+            {
+                return RedirectToAction(
+                    "Index",
+                    "Login");
+            }
 
             ViewBag.MemoNo = memoNo;
-
-
             return View();
 
         }
 
+        [HttpGet]
+        public async Task<JsonResult> Bank(string supplierCode, string millCode)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(supplierCode))
+                {
+                    return Json(new List<BankModel>());
+                }
+
+                var result =
+                    await _api.GetAsync<
+                        ApiResponse<List<BankModel>>
+                    >(
+                        "OCPSupplier/Bank?supplierCode=" + Uri.EscapeDataString(supplierCode) + "&millCode=" + Uri.EscapeDataString(millCode),
+                        true,
+                        "MINAMAS-2026"
+                    );
+
+                return Json(result.Data);
+            }
+            catch
+            {
+                return Json(new List<BankModel>());
+            }
+        }
 
         [HttpGet]
         public IActionResult SDGWeighChecking(
@@ -557,6 +592,8 @@ namespace OCPPaymentSystem.Web.Controllers
                     currentUser = JsonSerializer.Deserialize<LoginUser>(json);
                 }
                 model.millCode = currentUser.UnitCode ?? string.Empty;
+                model.userName = currentUser.fldUserId;
+                model.userIP = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "";
 
                 if (string.IsNullOrWhiteSpace(model.memoNo))
                 {
@@ -759,6 +796,11 @@ namespace OCPPaymentSystem.Web.Controllers
                     return Json(new List<SupplierModel>());
                 }
 
+                if (currentUser.UnitCode != "")
+                {
+                    request.CompanyCode = "";
+                    request.MillCode = currentUser.UnitCode;
+                }
 
                 var result =
                     await _api.PostAsync

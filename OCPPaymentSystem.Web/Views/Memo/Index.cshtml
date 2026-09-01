@@ -24,13 +24,13 @@
     <table class="table table-bordered table-hover">
         <thead>
             <tr>
-                <th width="50">No</th>
-                <th width="80">Company</th>
+                <th>No</th>
+                <th>Company</th>
                 <th>Supplier</th>
-                <th width="120">Date</th>
-                <th width="140">Amount</th>
-                <th width="220">Memo No</th>
-                <th width="180">Status</th>
+                <th>Date</th>
+                <th>Amount</th>
+                <th>Memo No</th>
+                <th>Status</th>
             </tr>
         </thead>
         <tbody id="tblMemo">
@@ -47,7 +47,7 @@
                 <input type="hidden" id="OpenMemoNo" value="@ViewBag.MemoNo" />
                 <input type="hidden" id="MemoNo" />
                 <input type="hidden" id="ApprovalLevel" value="@user?.ApprovalLevel" />
-                <input type="hidden" id="MillCode" />
+                <input type="hidden" id="MillCode" value="@user?.UnitCode" />
                 <select id="Company" class="form-select"></select>
             </td>
             <td width="220"></td>
@@ -58,10 +58,7 @@
             <td>
                 <button type="button"
                         id="btnSDGWeigh"
-                        class="btn btn-primary">
-
-                    SDGWeigh Checking
-
+                        class="btn btn-primary">SDGWeigh Checking
                 </button>
             </td>
         </tr>
@@ -70,9 +67,76 @@
             <td><input type="date" class="form-control" id="MemoDate" /></td>
         </tr>
         <tr>
-            <td>Amount</td>
-            <td><input class="form-control" id="Amount" /></td>
+            <td>Subject</td>
+            <td>
+                <input class="form-control"
+                       id="Perihal"
+                       value="Pembelian TBS" />
+            </td>
         </tr>
+        <tr>
+            <td>Invoice No</td>
+            <td>
+                <input class="form-control" id="InvoiceNo" />
+            </td>
+        </tr>
+        <tr>
+            <td>Nett Weight</td>
+            <td><input class="form-control" id="NettWeight" /></td>
+        </tr>
+        <tr>
+            <td>Deduction</td>
+            <td>
+                <div class="d-flex align-items-center gap-2">
+                    <input type="checkbox" id="isDeduction" checked />
+                    <input class="form-control" id="Deduction" />
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td>Price/Kg</td>
+            <td><input class="form-control" id="PricePerKg" /></td>
+        </tr>
+        <tr>
+            <td>Sub Total</td>
+            <td><input class="form-control" id="SubTotal" /></td>
+        </tr>
+        <tr>
+            <td>PPN</td>
+            <td>
+                <div class="d-flex align-items-center gap-2">
+                    <input type="checkbox" id="isPPN" checked />
+                    <select class="form-control" id="cbPPN" style="width:100px;">
+                        <option value="11">11%</option>
+                        <option value="1.1">1.1%</option>
+                        <option value="1.2">1.2%</option>
+                    </select>
+                    <input class="form-control" id="PPN" readonly />
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td>PPH (0.25%)</td>
+            <td>
+                <div class="d-flex align-items-center gap-2">
+                    <input type="checkbox" id="isPPH" checked />
+                    <input class="form-control" id="PPH" />
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td>Total</td>
+            <td><input class="form-control" id="Amount" value="0" /></td>
+        </tr>
+        <tr>
+            <td>Bank Account</td>
+            <td>
+                <select class="form-select" id="cbBank">
+                    <option value="">-- Select Bank Account --</option>
+                </select>
+            </td>
+        </tr>
+
         <tr>
             <td>Invoice</td>
             <td>

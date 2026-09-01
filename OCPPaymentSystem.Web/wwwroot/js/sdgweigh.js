@@ -94,6 +94,9 @@ $("#btnSaveSDGWeigh").click(function () {
         data: JSON.stringify(payload),
         success: function () {
             alert("SDGWeigh data saved successfully");
+            if (window.opener) {
+                window.opener.loadSDGWeighDetail();
+            }
             window.close();
         },
         error: function (xhr) {

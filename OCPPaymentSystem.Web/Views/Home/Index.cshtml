@@ -1,75 +1,38 @@
 ﻿@model DashboardModel
-
 @{
     ViewData["Title"] = "Dashboard";
 }
 
-
 <div class="container mt-4">
-
-    <h3>
-        OCP Payment System
-    </h3>
-
+    <h3>OCP Payment System</h3>
     <hr />
 
-
     <div class="row">
-
-
         <!-- Draft -->
-
-
         <div class="col-md-3">
-
             <div class="card">
-
                 <div class="card-body text-center">
-
-                    <h6>
-                        Not Submitted
-                    </h6>
-
-                    <h2>
-                        @Model.Draft
-                    </h2>
-
+                    <h6>Not Submitted</h6>
+                    <h2>@Model.Draft</h2>
                 </div>
-
             </div>
-
         </div>
-
-
 
         @foreach (var item in Model.Approval)
         {
             <div class="col-md-3">
-
                 <div class="card">
-
                     <div class="card-body text-center">
-
                         <h6>
-                            Waiting
-                            <br />
-                            @item.ApprovalName
+                            @(item.ApprovalName == "Rejected"
+                                ? "Rejected"
+                                : "Waiting for " + item.ApprovalName)
                         </h6>
-
-
-                        <h2>
-                            @item.Total
-                        </h2>
-
+                        <h2>@item.Total</h2>
                     </div>
-
                 </div>
-
             </div>
         }
 
-
     </div>
-
-
 </div>

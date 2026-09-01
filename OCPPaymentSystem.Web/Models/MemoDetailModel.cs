@@ -18,6 +18,13 @@
         public string approvedBy { get; set; } = "";
         public DateTime? approvedOn { get; set; }
         public DateTime? approvalCreatedOn { get; set; }
-
+        public decimal? NettWeight { get; set; }
+        public decimal? Deduction { get; set; }
+        public decimal? PricePerKg { get; set; }
+        public decimal? PPN { get; set; }
+        public decimal? PPH { get; set; }
+        public string perihal { get; set; } = "";
+        public string invoiceNo { get; set; } = "";
+        public string bankCode { get; set; } = "";
     }
 }

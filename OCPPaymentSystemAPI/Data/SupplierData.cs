@@ -47,6 +47,9 @@ AND Client_ID IN
 ";
             }
 
+            sql += @"
+ORDER BY TRIM(SUPPLIER_NAME)
+";
             SqlCommand cmd = new(sql, conn);
 
             if (!string.IsNullOrWhiteSpace(MillCode))

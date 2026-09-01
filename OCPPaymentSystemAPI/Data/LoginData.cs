@@ -184,6 +184,7 @@ namespace OCPPaymentSystemAPI.Data
             cmd.Parameters.Add("@CompanyCode", SqlDbType.NVarChar).Value = result.CompanyCode;
             cmd.Parameters.Add("@AreaName", SqlDbType.NVarChar).Value = result.AreaName;
             cmd.Parameters.Add("@RegionName", SqlDbType.NVarChar).Value = result.RegionName;
+            cmd.Parameters.Add("@SAPID", SqlDbType.NVarChar).Value = result.SAPID;
 
             dr = await cmd.ExecuteReaderAsync();
             companyAccess.Add(result.CompanyCode);

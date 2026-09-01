@@ -7,6 +7,9 @@
         public string SupplierCode { get; set; } = "";
         public string SupplierName { get; set; } = "";
         public DateTime MemoDate { get; set; }
+        public string perihal { get; set; } = "";
+        public string invoiceNo { get; set; } = "";
+        public string bankCode { get; set; } = "";
         public decimal Amount { get; set; }
         public string Remarks { get; set; } = "";
         public string CreatedBy { get; set; } = "";
@@ -20,5 +23,11 @@
         public string? Invoice { get; set; } = "";
         public string? BAP { get; set; } = "";
         public string? FakturPajak { get; set; } = "";
+        public string? Memo { get; set; } = "";
+        public decimal? NettWeight { get; set; }
+        public decimal? Deduction { get; set; }
+        public decimal? PricePerKg { get; set; }
+        public decimal? PPN { get; set; }
+        public decimal? PPH { get; set; }
     }
 }

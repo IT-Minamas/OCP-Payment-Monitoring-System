@@ -40,9 +40,6 @@ namespace OCPPaymentSystemAPI.Data
                     trans,
                     memoNo);
 
-            model.ApprovedBy = approvedBy;
-            model.ApprovedOn = DateTime.Now;
-
             MemoPdfGenerator pdf =
                 new MemoPdfGenerator();
 
@@ -109,37 +106,32 @@ VALUES
             MemoPdfModel result = new();
 
             string sql = @"
+                SELECT
+                    m.fldNo MemoNo,
+                    m.fldDate MemoDate,
+                    c.fldName CompanyName,
+                    m.fldSupplierCode SupplierCode,
+                    s.fldName SupplierName,
+                    m.fldInvoice InvoiceNo,
+                    m.fldAmount Amount,
+                    m.fldRemarks Remarks,
+                    m.fldPerihal Perihal,
+                    s.fldBankName,
+                    s.fldBankAccountNo,
+                    s.fldNameOnBankAccount,
+                    m.fldCreatedBy,
+                    m.fldCreatedOn,
+                    c.fldRegionName RegionName
+                FROM tbdMemo m
+                INNER JOIN vw_Company c ON m.fldCompanyCode COLLATE Latin1_General_CI_AI = c.fldCode COLLATE Latin1_General_CI_AI
+                INNER JOIN [172.16.192.10].[SAP_Replicate_New].[dbo].[SW_SUPPLIER] d ON d.Client_ID COLLATE Latin1_General_CI_AI = m.fldMillCode COLLATE Latin1_General_CI_AI AND m.fldSupplierCode COLLATE Latin1_General_CI_AI = d.SUPPLIER_CODE COLLATE Latin1_General_CI_AI
+                LEFT JOIN vw_Supplier s ON d.Sap_Code COLLATE Latin1_General_CI_AI = s.fldCode COLLATE Latin1_General_CI_AI AND m.fldBankCode COLLATE Latin1_General_CI_AI = s.fldBankCode COLLATE Latin1_General_CI_AI
+                WHERE m.fldNo = @MemoNo";
 
-SELECT
-    m.fldNo MemoNo,
-    m.fldDate MemoDate,
-    c.fldName CompanyName,
-    m.fldSupplierCode SupplierCode,
-    s.fldName SupplierName,
-    m.fldInvoice InvoiceNo,
-    m.fldAmount Amount,
-    m.fldRemarks Remarks,
-    s.fldBankName,
-    s.fldBankAccountNo,
-    s.fldNameOnBankAccount,
-    m.fldCreatedBy,
-    m.fldCreatedOn
-FROM tbdMemo m
-INNER JOIN vw_Company c
-    ON m.fldCompanyCode COLLATE Latin1_General_CI_AI=c.fldCode COLLATE Latin1_General_CI_AI
-INNER JOIN vw_Supplier s
-    ON m.fldSupplierCode COLLATE Latin1_General_CI_AI=s.fldCode COLLATE Latin1_General_CI_AI
-WHERE m.fldNo=@MemoNo
-
-";
-
-            SqlCommand cmd =
-                new SqlCommand(sql, conn, trans);
-
+            SqlCommand cmd = new SqlCommand(sql, conn, trans);
             cmd.Parameters.Add("@MemoNo", SqlDbType.NVarChar).Value = memoNo;
 
-            SqlDataReader dr =
-                await cmd.ExecuteReaderAsync();
+            SqlDataReader dr = await cmd.ExecuteReaderAsync();
 
             if (await dr.ReadAsync())
             {
@@ -151,14 +143,126 @@ WHERE m.fldNo=@MemoNo
                 result.InvoiceNo = dr["InvoiceNo"].ToString() ?? "";
                 result.Amount = Convert.ToDecimal(dr["Amount"]);
                 result.Remarks = dr["Remarks"].ToString() ?? "";
+                result.Perihal = dr["Perihal"].ToString() ?? "";
                 result.BankName = dr["fldBankName"].ToString() ?? "";
                 result.AccountNo = dr["fldBankAccountNo"].ToString() ?? "";
                 result.AccountName = dr["fldNameOnBankAccount"].ToString() ?? "";
                 result.CreatedBy = dr["fldCreatedBy"].ToString() ?? "";
                 result.CreatedOn = Convert.ToDateTime(dr["fldCreatedOn"]);
+                result.Region = dr["RegionName"].ToString() ?? "";
             }
 
             await dr.CloseAsync();
+
+
+            // =========================================================
+            // GET APPROVAL HISTORY
+            // =========================================================
+
+            string approvalSql = @"
+                SELECT
+                    a.fldApprovalLevel,
+                    a.fldCreatedBy,
+                    d.Employee_Name AS fldCreatedName,
+                    a.fldCreatedOn,
+                    a.fldApprovedBy,
+                    c.Employee_Name AS fldApprovedName,
+                    a.fldApprovedOn,
+                    b.fldDescription AS ApprovalLevelDescription
+                FROM tbdApproval a
+                JOIN tbdApprovalLevel b ON a.fldApprovalLevel = b.fldApprovalLevel
+                OUTER APPLY
+                (
+                    SELECT TOP 1 mp.Employee_Name
+                    FROM [CentralAuthentication].dbo.tblManPower mp
+                    WHERE a.fldApprovedBy COLLATE Latin1_General_CI_AI = mp.Employee_ID COLLATE Latin1_General_CI_AI
+                    ORDER BY mp.Period DESC
+                ) c
+                OUTER APPLY
+                (
+                    SELECT TOP 1 mp.Employee_Name
+                    FROM [CentralAuthentication].dbo.tblManPower mp
+                    WHERE a.fldCreatedBy COLLATE Latin1_General_CI_AI = mp.Employee_ID COLLATE Latin1_General_CI_AI
+                    ORDER BY mp.Period DESC
+                ) d
+                WHERE a.fldNo = @MemoNo
+                ORDER BY a.fldApprovalLevel";
+
+            SqlCommand approvalCmd =
+                new SqlCommand(approvalSql, conn, trans);
+
+            approvalCmd.Parameters.Add("@MemoNo", SqlDbType.NVarChar).Value = memoNo;
+
+            SqlDataReader approvalDr =
+                await approvalCmd.ExecuteReaderAsync();
+
+            while (await approvalDr.ReadAsync())
+            {
+                int approvalLevel =
+                    approvalDr["fldApprovalLevel"] == DBNull.Value
+                        ? 0
+                        : Convert.ToInt32(approvalDr["fldApprovalLevel"]);
+
+                string createdBy =
+                    approvalDr["fldCreatedBy"] == DBNull.Value
+                        ? ""
+                        : approvalDr["fldCreatedBy"].ToString() ?? "";
+
+                string createdName =
+                    approvalDr["fldCreatedName"] == DBNull.Value
+                        ? ""
+                        : approvalDr["fldCreatedName"].ToString() ?? "";
+
+                string approvedBy =
+                    approvalDr["fldApprovedBy"] == DBNull.Value
+                        ? ""
+                        : approvalDr["fldApprovedBy"].ToString() ?? "";
+
+                string approvedName =
+                    approvalDr["fldApprovedName"] == DBNull.Value
+                        ? ""
+                        : approvalDr["fldApprovedName"].ToString() ?? "";
+
+                string designation =
+                    approvalDr["ApprovalLevelDescription"] == DBNull.Value
+                        ? ""
+                        : approvalDr["ApprovalLevelDescription"].ToString() ?? "";
+
+                DateTime? createdOn =
+                    approvalDr["fldCreatedOn"] == DBNull.Value
+                        ? null
+                        : Convert.ToDateTime(approvalDr["fldCreatedOn"]);
+
+                DateTime? approvedOn =
+                    approvalDr["fldApprovedOn"] == DBNull.Value
+                        ? null
+                        : Convert.ToDateTime(approvalDr["fldApprovedOn"]);
+
+
+                if (!string.IsNullOrWhiteSpace(createdBy))
+                {
+                    result.Approvers.Add(new MemoApprover
+                    {
+                        Code = createdBy,
+                        Name = createdName,
+                        Designation = "Requestor",
+                        Date = createdOn
+                    });
+                }
+
+                if (!string.IsNullOrWhiteSpace(approvedBy))
+                {
+                    result.Approvers.Add(new MemoApprover
+                    {
+                        Code = approvedBy,
+                        Name = approvedName,
+                        Designation = designation,
+                        Date = approvedOn
+                    });
+                }
+            }
+
+            await approvalDr.CloseAsync();
 
             return result;
         }
@@ -833,7 +937,15 @@ SELECT
     fldCreatedBy,
     fldCreatedOn,
     fldMillCode,
-    ApprovalLevel
+    ApprovalLevel,
+    fldNettWeight,
+    fldDeduction,
+    fldPricePerKg,
+    fldPPN,
+    fldPPH,
+    fldBankCode,
+    fldPerihal,
+    fldInvoice
 FROM vw_SearchMemo
 WHERE fldNo=@MemoNo
 ";
@@ -854,7 +966,17 @@ WHERE fldNo=@MemoNo
                     CreatedBy = dr["fldCreatedBy"].ToString() ?? "",
                     CreatedOn = Convert.ToDateTime(dr["fldCreatedOn"]),
                     MillCode = dr["fldMillCode"].ToString() ?? "",
-                    ApprovalLevel = Convert.ToInt32(dr["ApprovalLevel"])
+                    ApprovalLevel = Convert.ToInt32(dr["ApprovalLevel"]),
+
+                    NettWeight = Convert.ToDecimal(dr["fldNettWeight"]),
+                    Deduction = Convert.ToDecimal(dr["fldDeduction"]),
+                    PricePerKg = Convert.ToDecimal(dr["fldPricePerKg"]),
+                    PPN = Convert.ToDecimal(dr["fldPPN"]),
+                    PPH = Convert.ToDecimal(dr["fldPPH"]),
+
+                    perihal = dr["fldPerihal"].ToString() ?? "",
+                    invoiceNo = dr["fldInvoice"].ToString() ?? "",
+                    bankCode = dr["fldBankCode"].ToString() ?? ""
                 };
             }
             return null;
@@ -869,48 +991,47 @@ WHERE fldNo=@MemoNo
             string sql = @"
 
 UPDATE tbdMemo
-
 SET
-
 fldCompanyCode=@CompanyCode,
-
 fldSupplierCode=@SupplierCode,
-
 fldDate=@MemoDate,
-
 fldAmount=@Amount,
-
 fldRemarks=@Remarks,
-
 fldUpdatedBy=@UpdatedBy,
-
 fldUpdatedOn=GETDATE(),
-
-fldUpdatedIP=@UpdatedIP
+fldUpdatedIP=@UpdatedIP,
+fldNettWeight=@fldNettWeight,
+fldDeduction=@fldDeduction,
+fldPricePerKg=@fldPricePerKg,
+fldPPN=@fldPPN,
+fldPPH=@fldPPH,
+fldBankCode=@fldBankCode,
+fldPerihal=@fldPerihal,
+fldInvoice=@fldInvoice
 
 WHERE
-
 fldNo=@MemoNo
 
 ";
 
             SqlCommand cmd = new(sql, conn);
-
             cmd.Parameters.Add("@CompanyCode", SqlDbType.NVarChar).Value = request.CompanyCode;
-
             cmd.Parameters.Add("@SupplierCode", SqlDbType.NVarChar).Value = request.SupplierCode;
-
             cmd.Parameters.Add("@MemoDate", SqlDbType.Date).Value = request.MemoDate;
-
             cmd.Parameters.Add("@Amount", SqlDbType.Decimal).Value = request.Amount;
             cmd.Parameters["@Amount"].Precision = 18;
             cmd.Parameters["@Amount"].Scale = 2;
-
             cmd.Parameters.Add("@Remarks", SqlDbType.NVarChar).Value = request.Remarks ?? "";
-
             cmd.Parameters.Add("@UpdatedBy", SqlDbType.NVarChar).Value = request.UserName;
-
             cmd.Parameters.Add("@UpdatedIP", SqlDbType.NVarChar).Value = request.UserIP;
+            cmd.Parameters.Add("@fldNettWeight", SqlDbType.Decimal).Value = request.NettWeight;
+            cmd.Parameters.Add("@fldDeduction", SqlDbType.Decimal).Value = request.Deduction;
+            cmd.Parameters.Add("@fldPricePerKg", SqlDbType.Decimal).Value = request.PricePerKg;
+            cmd.Parameters.Add("@fldPPN", SqlDbType.Decimal).Value = request.PPN;
+            cmd.Parameters.Add("@fldPPH", SqlDbType.Decimal).Value = request.PPH;
+            cmd.Parameters.Add("@fldBankCode", SqlDbType.NVarChar).Value = request.bankCode ?? "";
+            cmd.Parameters.Add("@fldPerihal", SqlDbType.NVarChar).Value = request.perihal ?? "";
+            cmd.Parameters.Add("@fldInvoice", SqlDbType.NVarChar).Value = request.invoiceNo ?? "";
 
             cmd.Parameters.Add("@MemoNo", SqlDbType.NVarChar).Value = request.MemoNo;
 
@@ -1035,7 +1156,13 @@ SELECT a.fldNo,a.fldCompanyCode,a.fldSupplierCode,a.fldSupplierName,a.fldDate,a.
         WHEN B.fldDocumentType='FakturPajak'
         THEN B.fldOriginalFileName 
         END
-    ) AS FakturPajak
+    ) AS FakturPajak,
+    MAX(
+        CASE 
+        WHEN B.fldDocumentType='Memo'
+        THEN B.fldOriginalFileName 
+        END
+    ) AS Memo
 FROM vw_SearchMemo AS a 
 LEFT JOIN tbdMemoAttachment AS B ON a.fldNo=B.fldNo
 WHERE 1=1 ";
@@ -1107,7 +1234,8 @@ WHERE 1=1 ";
                     MillCode = dr["fldMillCode"].ToString() ?? "",
                     Invoice = dr["Invoice"].ToString() ?? "",
                     BAP = dr["BAP"].ToString() ?? "",
-                    FakturPajak = dr["FakturPajak"].ToString() ?? ""
+                    FakturPajak = dr["FakturPajak"].ToString() ?? "",
+                    Memo = dr["Memo"].ToString() ?? ""
                 });
             }
             return list;
@@ -1134,7 +1262,17 @@ INSERT INTO tbdMemo
     fldCreatedBy,
     fldCreatedOn,
     fldCreatedIP,
-    fldMillCode
+    fldMillCode,
+
+    fldNettWeight,
+    fldDeduction,
+    fldPricePerKg,
+    fldPPN,
+    fldPPH,
+
+    fldBankCode,
+    fldPerihal,
+    fldInvoice
 )
 VALUES
 (
@@ -1147,7 +1285,17 @@ VALUES
     @CreatedBy,
     GETDATE(),
     @CreatedIP,
-    @fldMillCode
+    @fldMillCode,
+
+    @fldNettWeight,
+    @fldDeduction,
+    @fldPricePerKg,
+    @fldPPN,
+    @fldPPH,
+
+    @fldBankCode,
+    @fldPerihal,
+    @fldInvoice
 )
 ";
 
@@ -1163,6 +1311,16 @@ VALUES
                 cmd.Parameters.Add("@CreatedBy", SqlDbType.NVarChar).Value = request.UserName;
                 cmd.Parameters.Add("@CreatedIP", SqlDbType.NVarChar).Value = request.UserIP;
                 cmd.Parameters.Add("@fldMillCode", SqlDbType.NVarChar).Value = request.MillCode;
+
+                cmd.Parameters.Add("@fldNettWeight", SqlDbType.Decimal).Value = request.NettWeight ?? (object)DBNull.Value;
+                cmd.Parameters.Add("@fldDeduction", SqlDbType.Decimal).Value = request.Deduction ?? (object)DBNull.Value;
+                cmd.Parameters.Add("@fldPricePerKg", SqlDbType.Decimal).Value = request.PricePerKg ?? (object)DBNull.Value;
+                cmd.Parameters.Add("@fldPPN", SqlDbType.Decimal).Value = request.PPN ?? (object)DBNull.Value;
+                cmd.Parameters.Add("@fldPPH", SqlDbType.Decimal).Value = request.PPH ?? (object)DBNull.Value;
+
+                cmd.Parameters.Add("@fldBankCode", SqlDbType.NVarChar).Value = request.bankCode ?? "";
+                cmd.Parameters.Add("@fldPerihal", SqlDbType.NVarChar).Value = request.perihal ?? "";
+                cmd.Parameters.Add("@fldInvoice", SqlDbType.NVarChar).Value = request.invoiceNo ?? "";
                 await cmd.ExecuteNonQueryAsync();
                 trans.Commit();
                 return memoNo;

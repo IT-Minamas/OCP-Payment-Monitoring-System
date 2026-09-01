@@ -18,6 +18,18 @@ namespace OCPPaymentSystem.Web.Controllers
 
         public IActionResult Index(int id = 0)
         {
+            LoginUser? user =
+                HttpContext.Session
+                .GetObject<LoginUser>("CurrentUser");
+
+
+            if (user == null)
+            {
+                return RedirectToAction(
+                    "Index",
+                    "Login");
+            }
+
             ViewBag.ID = id;
             return View();
         }

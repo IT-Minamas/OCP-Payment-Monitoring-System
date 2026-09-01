@@ -21,5 +21,6 @@
         public string? invoice { get; set; } = "";
         public string? bap { get; set; } = "";
         public string? fakturPajak { get; set; } = "";
+        public string? memo { get; set; } = "";
     }
 }

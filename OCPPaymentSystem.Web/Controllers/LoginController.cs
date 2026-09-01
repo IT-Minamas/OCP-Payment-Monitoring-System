@@ -44,7 +44,7 @@ namespace OCPPaymentSystem.Web.Controllers
                     fldUserId = result.user.fldUserId,
                     fldName = result.user.fldName,
                     fldApiKey = result.user.fldApiKey,
-                    UnitCode = result.user.UnitCode,
+                    UnitCode = result.user.ApprovalLevel < 20 ? result.user.UnitCode : "",
                     CompanyCode = result.user.CompanyCode,
                     CompanyName = result.user.CompanyName,
                     Role = result.user.Role,

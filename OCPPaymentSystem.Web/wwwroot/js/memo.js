@@ -34,7 +34,9 @@ function setMode(mode) {
     $("#Amount").prop("disabled", true);
     $("#PPN").prop("disabled", true);
     $("#PPH").prop("disabled", true);
+
     //$("#cbPPN").prop("disabled", true);
+    $("#cbPPN").prop("disabled", mode != FORM_MODE.NEW);
 
     //$("#Remarks").prop("disabled", mode != FORM_MODE.NEW);
     $("#Remarks").prop("disabled", mode != FORM_MODE.DETAIL);
@@ -215,23 +217,24 @@ function NewMemo() {
 
 function loadMemo() {
     $.get("/Memo/MemoList", function (data) {
-        //console.table(data);
+        console.table(data);
         $("#tblMemo").empty();
         $.each(data, function (i, x) {
             var tr = $("<tr>");
 
             tr.append("<td>" + (i + 1) + "</td>");
             tr.append("<td>" + x.companyCode + "</td>");
+            tr.append("<td>" + x.millAbbv + "</td>");
             tr.append("<td>" + x.supplierName + "</td>");
 
             tr.append("<td>" + formatDate(x.memoDate) + "</td>");
-            tr.append("<td style='text-align:right'>" + Number(x.amount).toLocaleString() + "</td>");
+            tr.append("<td style='text-align:right'>" + Number(x.amount).toLocaleString('en-US', { maximumFractionDigits: 0 }) + "</td>");
             if (x.memo && x.memo.trim() !== "") {
                 tr.append("<td><a href=\"#\" onclick=\"openAttachment('" + x.memoNo + "', 'Memo')\">" + x.memoNo + "</a></td>");
             } else {
                 tr.append("<td>" + x.memoNo + "</td>");
             }
-            tr.append("<td>" + x.approvalStatus + "</td>");
+            tr.append("<td>" + x.approvalStatus + " - " + x.approvalRemarks + "</td>");
             tr.attr("data-id", x.memoNo);
 
             $("#tblMemo").append(tr);
@@ -318,7 +321,14 @@ function loadDetail(memoNo) {
 
             calculateAmount();  
 
-            setMode(FORM_MODE.HEADER);
+            if (x.approvalStatus == 'Rejected') {
+                $("#btnApprove").prop("disabled", true);
+                $("#btnReject").prop("disabled", true);
+            } else {
+                $("#btnApprove").prop("disabled", false);
+                $("#btnReject").prop("disabled", false);
+                setMode(FORM_MODE.HEADER);
+            }
     });
 }
 function setClosestPPNRate(rate) {
@@ -345,15 +355,26 @@ function approveMemo() {
         return;
     }
 
-    if (!confirm("Approve this memo?"))
+    //if (!confirm("Approve this memo?"))
+    //    return;
+
+    let remarks = prompt("Approve this memo :");
+
+    if (remarks == null)
         return;
+
+    if (remarks.trim() == "") {
+        alert("Approve remarks is required.");
+        return;
+    }
 
     $.ajax({
         url: "/Memo/Approve",
         type: "POST",
         contentType: "application/json",
         data: JSON.stringify({
-            memoNo: $("#MemoNo").val()
+            memoNo: $("#MemoNo").val(),
+            Remarks: remarks
         }),
 
         success: function (result) {
@@ -391,6 +412,8 @@ function approvalMode() {
     $("#isPPH").prop("disabled", true);
     $("#btnSDGWeigh").prop("disabled", true);
 
+    $("#cbPPN").prop("disabled", true);
+
     /*
     $("#btnNew").prop("disabled", false);
     $("#btnSave").prop("disabled", false);
@@ -424,6 +447,8 @@ function submissionMode() {
     $("#isPPN").prop("disabled", false);
     $("#isPPH").prop("disabled", false);
     $("#btnSDGWeigh").prop("disabled", false);
+
+    $("#cbPPN").prop("disabled", false);
 
     /*
     $("#btnNew").prop("disabled", true);
@@ -541,6 +566,7 @@ function saveMemo() {
     if ($("#Amount").val() == "") {
         $("#Amount").val(0);
     }
+
 
     //save
     let formData =

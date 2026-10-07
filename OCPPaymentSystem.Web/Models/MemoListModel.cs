@@ -14,10 +14,12 @@
         public DateTime createdOn { get; set; }
         public int approvalLevel { get; set; } = -10;
         public string approvalStatus { get; set; } = "";
+        public string approvalRemarks { get; set; } = "";
         public string approvedBy { get; set; } = "";
         public DateTime? approvedOn { get; set; }
         public DateTime? approvalCreatedOn { get; set; }
         public string MillCode { get; set; } = "";
+        public string MillAbbv { get; set; } = "";
         public string? invoice { get; set; } = "";
         public string? bap { get; set; } = "";
         public string? fakturPajak { get; set; } = "";

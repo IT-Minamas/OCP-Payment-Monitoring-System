@@ -1,4 +1,5 @@
 ﻿$(document).ready(function () {
+    loadApprover();
     loadCompany();
     $("#btnSearch").click(function () {
         searchMemo();
@@ -12,8 +13,27 @@ function loadCompany() {
             $("#Company").append(
                 "<option value=''>-</option>"
             );
+            console.table(data);
             $.each(data, function (i, x) {
                 $("#Company").append(
+                    `<option value='${x.code}'>
+                        ${x.code} - ${x.name}
+                    </option>`
+                );
+            });
+        });
+}
+
+function loadApprover() {
+    $.get("/MemoSearch/Approver",
+        function (data) {
+            $("#Approver").empty();
+            $("#Approver").append(
+                "<option value=''>-</option>"
+            );
+            console.table(data);
+            $.each(data, function (i, x) {
+                $("#Approver").append(
                     `<option value='${x.code}'>
                         ${x.code} - ${x.name}
                     </option>`
@@ -38,30 +58,28 @@ function searchMemo() {
             supplierCode:
                 $("#Supplier").val(),
 
-
             dateFrom:
                 $("#DateFrom").val() == ""
                     ? null
                     : $("#DateFrom").val(),
-
 
             dateTo:
                 $("#DateTo").val() == ""
                     ? null
                     : $("#DateTo").val(),
 
-
             amountFrom:
                 $("#AmountFrom").val() == ""
                     ? null
                     : parseFloat($("#AmountFrom").val()),
-
 
             amountTo:
                 $("#AmountTo").val() == ""
                     ? null
                     : parseFloat($("#AmountTo").val()),
 
+            approver:
+                $("#Approver").val(),
 
             remarks:
                 $("#Remarks").val()
@@ -73,20 +91,19 @@ function searchMemo() {
             $.each(data, function (i, x) {
                 $("#memoResult").append(`
         <tr ondblclick="openMemo('${x.memoNo}')"style="cursor:pointer">
-            <td>${x.memoNo}</td>
-            <td>${formatDateDDMMMYYYY(x.memoDate)}</td>
+            <td noWrap>${x.memoNo}</td>
+            <td noWrap>${formatDateDDMMMYYYY(x.memoDate)}</td>
             <td>${x.companyCode}</td>
+            <td>${x.millAbbv}</td>
             <td>${x.supplierName}</td>
-            <td class="text-end">
-                ${formatAmount(x.amount)}
-            </td>
-            <td>${x.approvalStatus}</td>
+            <td class="text-end">${formatAmount(x.amount)}</td>
+            <td>${x.approvalStatus} - ${x.approvalRemarks}</td>
             <td>${x.remarks}</td>
-            <td><a href="#" onclick="openAttachment('${x.memoNo}','Memo')">${x.memo ?? ''}</a></td>
-            <td><a href="#" onclick="openAttachment('${x.memoNo}','Invoice')">${x.invoice ?? ''}</a></td>
-            <td><a href="#" onclick="openAttachment('${x.memoNo}','BAP')">${x.bap ?? ''}</a></td>
-            <td><a href="#" onclick="openAttachment('${x.memoNo}','FakturPajak')">${x.fakturPajak ?? ''}</a></td>
-            </tr>
+            <td><a href="#" onclick="openAttachment('${x.memoNo}','Memo')">click</a></td>
+            <td><a href="#" onclick="openAttachment('${x.memoNo}','Invoice')">click</a></td>
+            <td><a href="#" onclick="openAttachment('${x.memoNo}','BAP')">click</a></td>
+            <td><a href="#" onclick="openAttachment('${x.memoNo}','FakturPajak')">click</a></td>
+        </tr>
         `);
         });
         }
@@ -125,9 +142,15 @@ function loadSupplier() {
         }),
 
         success: function (data) {
+            // cleansing data
+            data = data.filter((x, i, arr) =>
+                arr.findIndex(y => y.code === x.code) === i
+            );
+            console.log(data);
+
             $.each(data, function (i, x) {
                 $("#Supplier").append(
-                    `<option value='${x.code}'>${x.code} - ${x.name}</option>`
+                    `<option value='${x.code}'>${x.name} (${x.code})</option>`
                 );
             });
         }
@@ -181,8 +204,8 @@ function formatAmount(value) {
         .toLocaleString(
             "en-US",
             {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
             }
         );
 

@@ -380,3 +380,87 @@ USE OCPPaymentSystem
 SELECT * FROM tbdMemo
 
 
+SELECT *
+FROM [172.16.192.10].[SAP_Replicate_New].[dbo].[SW_SUPPLIER]
+WHERE Client_Id='M412'
+ORDER BY TRIM(SUPPLIER_NAME)
+
+SELECT * 
+FROM [172.16.192.10].[SAP_Replicate_New].[dbo].[vw_UnitSetup2]
+
+SELECT TOP 1 mp.Email_Work
+FROM tbdApproval a
+JOIN [CentralAuthentication].dbo.tblManPower mp
+    ON a.fldApprovedBy COLLATE Latin1_General_CI_AI=mp.Employee_ID COLLATE Latin1_General_CI_AI
+WHERE a.fldNo='M.1/OP-TREA/GPI-TBS/VIII/2026'
+AND a.fldApprovalLevel=10
+ORDER BY mp.Period DESC
+
+SELECT *
+FROM tbdLog
+
+EXEC [CentralAuthentication].[dbo].[sp_GetDetailByUserAccess] '00043357','68'
+
+EXEC sp_GetApprovalLevel '00043497','Area Controller, Jambi - POE'
+
+--diketahui : approval level saat ini : 10
+--ditanyakan : siapa approval level selanjutnya
+--input
+DECLARE @intApprovalLevel int
+DECLARE @strMillCode nvarchar(5)
+
+--output
+DECLARE @outApprovalLevel int
+DECLARE @outCompanyCode nvarchar(5)
+DECLARE @outAreaCode nvarchar(5)
+DECLARE @outRegionCode nvarchar(5)
+
+SET @intApprovalLevel=50
+SET @strMillCode='M566'
+
+SELECT @outApprovalLevel=ISNULL(b.fldApprovalLevel, 10)
+FROM tbdApprovalLevel AS a
+JOIN tbdApprovalLevel AS b ON b.fldSequence=a.fldSequence+1
+WHERE a.fldApprovalLevel=@intApprovalLevel
+
+SET @outApprovalLevel =
+    CASE
+        WHEN @outApprovalLevel IS NULL THEN 10
+        ELSE @outApprovalLevel
+    END;
+
+--cari Area, PT, Region untuk mill itu
+SELECT @outAreaCode=fldAreaCode,@outCompanyCode=fldCompanyCode,@outRegionCode=fldRegionCode
+FROM [172.16.192.10].[SAP_Replicate_New].[dbo].[vw_UnitSetup2] 
+WHERE fldSAPVirtualCode=@strMillCode
+
+SELECT Employee_ID,Employee_Name,Business_Title
+FROM [CentralAuthentication].[dbo].[vw_All_ManPower]
+WHERE Employee_ID IN (
+	--untuk user yang ditambahkan role untuk mill/area/region tertentu
+	SELECT a.fldSAPID
+	FROM tbdApprovalLevelMapping AS a
+	WHERE a.fldBusinessTitle IS NULL AND a.fldApprovalLevel=@outApprovalLevel AND (a.fldCompanyCode IS NULL OR a.fldCompanyCode=@strMillCode OR a.fldCompanyCode=@outAreaCode OR a.fldCompanyCode=@outRegionCode)
+	UNION
+	--untuk user yang role-nya dimapping menurut Business Title-nya
+	SELECT b.Employee_ID COLLATE Latin1_General_CI_AI
+	FROM tbdApprovalLevelMapping AS a
+	JOIN [CentralAuthentication].[dbo].[vw_All_ManPower] AS b ON b.Business_Title COLLATE Latin1_General_CI_AI LIKE '%' + a.fldBusinessTitle + '%' COLLATE Latin1_General_CI_AI
+	WHERE a.fldApprovalLevel=@outApprovalLevel AND a.fldBusinessTitle IS NOT NULL AND 
+			(
+				(a.fldApprovalLevel=10 AND b.fldUnitCode=@strMillCode) OR 
+				(a.fldApprovalLevel=20 AND b.fldAreaCode=@outAreaCode) OR 
+				(a.fldApprovalLevel=30 AND b.fldRegionCode=@outRegionCode) OR
+				(a.fldApprovalLevel>=40)
+			)
+)
+------------------------------------------------------------------------
+
+EXEC sp_GetNextApprover 40,'M438'
+
+SELECT *
+FROM [CentralAuthentication].[dbo].[vw_All_ManPower]
+WHERE Employee_ID IN (
+'00043357',
+'00092363',
+'00043669')

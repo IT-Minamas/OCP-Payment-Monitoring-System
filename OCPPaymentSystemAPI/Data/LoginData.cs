@@ -104,7 +104,35 @@ namespace OCPPaymentSystemAPI.Data
             result.user.AreaName = access.AreaName;
             result.user.BusinessTitle = access.BusinessTitle;
 
+            //masukkan log ke database
+            await InsertLogAsync(result.user.fldUserId, "User logged in successfully.");
+
             return result!;
+        }
+
+        private async Task InsertLogAsync(string userName, string remarks)
+        {
+            using SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection"));
+            await conn.OpenAsync();
+
+            using var cmd = new SqlCommand(@"
+                INSERT INTO tbdLog
+                (
+                    fldDate,
+                    fldUserName,
+                    fldRemarks
+                )
+                VALUES
+                (
+                    GETDATE(),
+                    @UserName,
+                    @Remarks
+                )", conn);
+
+            cmd.Parameters.Add("@UserName", SqlDbType.NVarChar, 50).Value = userName;
+            cmd.Parameters.Add("@Remarks", SqlDbType.NVarChar).Value = remarks;
+
+            await cmd.ExecuteNonQueryAsync();
         }
 
         private async Task<UserAccessModel> GetUserAccessAsync(

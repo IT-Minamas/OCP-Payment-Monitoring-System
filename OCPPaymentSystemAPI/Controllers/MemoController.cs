@@ -11,13 +11,16 @@ namespace OCPPaymentSystemAPI.Controllers
     public class MemoController : BaseController
     {
         private readonly MemoData _memoData;
+        private readonly EmailData _emailData;
 
         public MemoController(
             IConfiguration configuration,
-            MemoData memoData)
+            MemoData memoData,
+            EmailData emailData)
             : base(configuration)
         {
             _memoData = memoData;
+            _emailData = emailData;
         }
 
         [HttpGet]
@@ -246,8 +249,8 @@ namespace OCPPaymentSystemAPI.Controllers
                 bool result =
                     await _memoData.ApproveAsync(request);
 
-                // Nanti:
-                // await _emailData.SendApproveEmailAsync(...);
+                //Send Email to approver and requester
+                await _emailData.SendApproverEmailAsync(request);
 
                 return Success(result);
             }

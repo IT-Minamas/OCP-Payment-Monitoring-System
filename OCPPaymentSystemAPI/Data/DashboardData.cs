@@ -41,35 +41,41 @@ namespace OCPPaymentSystemAPI.Data
             //-------------------------------
             // Draft
             //-------------------------------
-            string sql = @"SELECT COUNT(*) FROM vw_SearchMemo WHERE ApprovalLevel=0" + companyFilter;
-            SqlCommand cmd = new(sql, conn);
+            //string sql = @"SELECT COUNT(*) FROM vw_SearchMemo WHERE ApprovalLevel=0" + companyFilter;
+            //SqlCommand cmd = new(sql, conn);
 
-            for (int i = 0;i < request.CompanyAccess.Count;i++)
-            {
-                cmd.Parameters.Add("@Company" + i,SqlDbType.VarChar).Value = request.CompanyAccess[i];
-            }
-            result.Draft = Convert.ToInt32(await cmd.ExecuteScalarAsync());
+            //for (int i = 0;i < request.CompanyAccess.Count;i++)
+            //{
+            //    cmd.Parameters.Add("@Company" + i,SqlDbType.VarChar).Value = request.CompanyAccess[i];
+            //}
+            //result.Draft = Convert.ToInt32(await cmd.ExecuteScalarAsync());
 
             //-------------------------------
             // Approval Summary
             //-------------------------------
-            sql =
+            string sql =
             @"
-            SELECT ApprovalLevel,
-                REPLACE(ApprovalStatus,'Waiting for ','') AS ApprovalName,
-                COUNT(*) Total
-            FROM vw_SearchMemo
-            WHERE ApprovalLevel>0
+            SELECT
+                a.ApprovalLevel,
+                CASE
+                    WHEN a.ApprovalStatus LIKE '%Rejected%' THEN 'Rejected by ' + b.fldDescription
+                    WHEN a.ApprovalStatus LIKE '%Approved%' THEN 'Approved by ' + b.fldDescription
+                    ELSE a.ApprovalStatus
+                END AS ApprovalName,
+                COUNT(*) AS Total
+            FROM vw_SearchMemo a
+            LEFT JOIN tbdApprovalLevel AS b ON a.ApprovalLevel = b.fldApprovalLevel
+            WHERE 1=1
             "
             +
             companyFilter
             +
             @"
-            GROUP BY ApprovalLevel, ApprovalStatus
-            ORDER BY ApprovalLevel
+            GROUP BY a.ApprovalLevel, a.ApprovalStatus, b.fldDescription
+            ORDER BY a.ApprovalLevel
             ";
 
-            cmd = new(sql, conn);
+            SqlCommand cmd = new(sql, conn);
             for (int i = 0;i < request.CompanyAccess.Count;i++)
             {
                 cmd.Parameters.Add("@Company" + i,SqlDbType.VarChar).Value = request.CompanyAccess[i];

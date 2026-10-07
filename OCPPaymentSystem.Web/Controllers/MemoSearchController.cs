@@ -39,6 +39,31 @@ namespace OCPPaymentSystem.Web.Controllers
 
 
         [HttpGet]
+        public async Task<JsonResult> Approver()
+        {
+
+            LoginUser? user =
+                HttpContext.Session
+                .GetObject<LoginUser>("CurrentUser");
+
+
+            var result =
+                await _api.PostAsync<
+                    object,
+                    ApiResponse<List<ApproverModel>>>
+                (
+                    "Approver/Search",
+                    new { },
+                    true,
+                    "MINAMAS-2026"
+                );
+
+
+            return Json(result.Data);
+
+        }
+
+        [HttpGet]
         public async Task<JsonResult> Company()
         {
 

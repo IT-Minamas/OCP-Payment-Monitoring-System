@@ -945,7 +945,8 @@ SELECT
     fldPPH,
     fldBankCode,
     fldPerihal,
-    fldInvoice
+    fldInvoice,
+    ApprovalStatus
 FROM vw_SearchMemo
 WHERE fldNo=@MemoNo
 ";
@@ -967,6 +968,7 @@ WHERE fldNo=@MemoNo
                     CreatedOn = Convert.ToDateTime(dr["fldCreatedOn"]),
                     MillCode = dr["fldMillCode"].ToString() ?? "",
                     ApprovalLevel = Convert.ToInt32(dr["ApprovalLevel"]),
+                    ApprovalStatus = dr["ApprovalStatus"].ToString() ?? "",
 
                     NettWeight = Convert.ToDecimal(dr["fldNettWeight"]),
                     Deduction = Convert.ToDecimal(dr["fldDeduction"]),
@@ -1138,7 +1140,7 @@ WHERE fldNo=@MemoNo
             await conn.OpenAsync();
 
             string sql = @"
-SELECT a.fldNo,a.fldCompanyCode,a.fldSupplierCode,a.fldSupplierName,a.fldDate,a.fldAmount,a.fldRemarks,a.fldCreatedBy,a.fldCreatedOn,a.fldMillCode,a.ApprovalLevel,a.ApprovalStatus,a.fldApprovedBy,a.fldApprovedOn,a.ApprovalCreatedOn,
+SELECT a.fldNo,a.fldCompanyCode,a.fldSupplierCode,a.fldSupplierName,a.fldDate,a.fldAmount,a.fldRemarks,a.fldCreatedBy,a.fldCreatedOn,a.fldMillCode,a.ApprovalLevel,a.ApprovalStatus,a.fldApprovedBy,a.fldApprovedOn,a.ApprovalCreatedOn,a.ApprovalRemarks,a.MillAbbv,
     MAX(
         CASE 
         WHEN B.fldDocumentType='Invoice'
@@ -1188,8 +1190,9 @@ WHERE 1=1 ";
             if (request.AmountFrom != null) { sql += " AND a.fldAmount>=@AmountFrom "; }
             if (request.AmountTo != null) { sql += " AND a.fldAmount<=@AmountTo "; }
             if (!string.IsNullOrWhiteSpace(request.Remarks)) { sql += " AND a.fldRemarks LIKE @Remarks "; }
+            if (!string.IsNullOrWhiteSpace(request.Approver)) { sql += " AND a.ApprovalLevel=@Approver "; }
 
-            sql += " GROUP BY a.fldNo,a.fldCompanyCode,a.fldSupplierCode,a.fldSupplierName,a.fldDate,a.fldAmount,a.fldRemarks,a.fldCreatedBy,a.fldCreatedOn,a.fldMillCode,a.ApprovalLevel,a.ApprovalStatus,a.fldApprovedBy,a.fldApprovedOn,a.ApprovalCreatedOn ORDER BY a.fldDate DESC ";
+            sql += " GROUP BY a.fldNo,a.fldCompanyCode,a.fldSupplierCode,a.fldSupplierName,a.fldDate,a.fldAmount,a.fldRemarks,a.fldCreatedBy,a.fldCreatedOn,a.fldMillCode,a.ApprovalLevel,a.ApprovalStatus,a.fldApprovedBy,a.fldApprovedOn,a.ApprovalCreatedOn,a.ApprovalRemarks,a.MillAbbv ORDER BY a.fldDate DESC ";
 
             SqlCommand cmd = new(sql, conn);
 
@@ -1211,6 +1214,7 @@ WHERE 1=1 ";
             if (request.AmountFrom != null) cmd.Parameters.Add("@AmountFrom", SqlDbType.Decimal).Value = request.AmountFrom;
             if (request.AmountTo != null) cmd.Parameters.Add("@AmountTo", SqlDbType.Decimal).Value = request.AmountTo;
             if (!string.IsNullOrWhiteSpace(request.Remarks)) cmd.Parameters.Add("@Remarks", SqlDbType.VarChar).Value = "%" + request.Remarks + "%";
+            if (!string.IsNullOrWhiteSpace(request.Approver)) cmd.Parameters.Add("@Approver", SqlDbType.VarChar).Value = request.Approver;
 
             SqlDataReader dr = await cmd.ExecuteReaderAsync();
             while (await dr.ReadAsync())
@@ -1228,10 +1232,12 @@ WHERE 1=1 ";
                     CreatedOn = Convert.ToDateTime(dr["fldCreatedOn"]),
                     ApprovalLevel = Convert.ToInt16(dr["ApprovalLevel"]),
                     ApprovalStatus = dr["ApprovalStatus"].ToString() ?? "",
+                    ApprovalRemarks = dr["ApprovalRemarks"].ToString() ?? "",
                     ApprovedBy = dr["fldApprovedBy"].ToString() ?? "",
                     ApprovedOn = dr.GetDate("fldApprovedOn"),
                     ApprovalCreatedOn = dr.GetDate("ApprovalCreatedOn"),
                     MillCode = dr["fldMillCode"].ToString() ?? "",
+                    MillAbbv = dr["MillAbbv"].ToString() ?? "",
                     Invoice = dr["Invoice"].ToString() ?? "",
                     BAP = dr["BAP"].ToString() ?? "",
                     FakturPajak = dr["FakturPajak"].ToString() ?? "",
@@ -1507,228 +1513,106 @@ VALUES
         public async Task<bool> ApproveAsync(MemoApproveRequest request)
         {
             using SqlConnection conn = _database.GetConnection();
-
             await conn.OpenAsync();
 
             SqlTransaction trans = conn.BeginTransaction();
-
             try
             {
                 string sql = @"
-
-SELECT
-    fldApprovalLevel
-
-FROM tbdApproval
-
-WHERE fldNo=@MemoNo
-AND fldCurrentApproval=1
-AND fldStatus='Waiting'
-
-";
+                    SELECT fldApprovalLevel
+                    FROM tbdApproval
+                    WHERE fldNo=@MemoNo AND fldCurrentApproval=1 AND fldStatus='Waiting'
+                ";
 
                 SqlCommand cmd = new(sql, conn, trans);
+                cmd.Parameters.Add("@MemoNo", SqlDbType.NVarChar).Value = request.MemoNo;
 
-                cmd.Parameters.Add("@MemoNo",
-                    SqlDbType.NVarChar).Value = request.MemoNo;
-
-                object obj =
-                    await cmd.ExecuteScalarAsync();
-
-                if (obj == null)
-                    throw new Exception("No active approval.");
-
-                int currentLevel =
-                    Convert.ToInt32(obj);
+                object obj = await cmd.ExecuteScalarAsync();
+                if (obj == null) throw new Exception("No active approval.");
+                int currentLevel = Convert.ToInt32(obj);
 
                 sql = @"
-
-SELECT
-    fldApprovalLevel
-
-FROM tbdApproval
-
-WHERE fldNo=@MemoNo
-AND fldCurrentApproval=1
-AND fldStatus='Waiting'
-
-";
+                    SELECT fldApprovalLevel
+                    FROM tbdApproval
+                    WHERE fldNo=@MemoNo AND fldCurrentApproval=1 AND fldStatus='Waiting'
+                ";
 
                 cmd = new(sql, conn, trans);
+                cmd.Parameters.Add("@MemoNo", SqlDbType.NVarChar).Value = request.MemoNo;
 
-                cmd.Parameters.Add("@MemoNo",
-                    SqlDbType.NVarChar).Value = request.MemoNo;
+                obj = await cmd.ExecuteScalarAsync();
+                if (obj == null) throw new Exception("No active approval.");
 
-                obj =
-                    await cmd.ExecuteScalarAsync();
-
-                if (obj == null)
-                    throw new Exception("No active approval.");
-
-                currentLevel =
-                    Convert.ToInt32(obj);
+                currentLevel = Convert.ToInt32(obj);
 
                 sql = @"
-
-UPDATE tbdApproval
-
-SET
-
-fldCurrentApproval=0,
-
-fldApprovedBy=@User,
-
-fldApprovedOn=GETDATE(),
-
-fldStatus='Approved',
-
-fldRemarks=@Remarks
-
-WHERE fldNo=@MemoNo
-
-AND fldApprovalLevel=@ApprovalLevel
-
-";
+                    UPDATE tbdApproval
+                    SET
+                        fldCurrentApproval=0,
+                        fldApprovedBy=@User,
+                        fldApprovedOn=GETDATE(),
+                        fldStatus='Approved',
+                        fldRemarks=@Remarks
+                    WHERE fldNo=@MemoNo AND fldApprovalLevel=@ApprovalLevel
+                ";
 
                 cmd = new(sql, conn, trans);
-
-                cmd.Parameters.Add("@User",
-                SqlDbType.NVarChar).Value = request.UserName;
-
-                cmd.Parameters.Add("@Remarks",
-                SqlDbType.NVarChar).Value = request.Remarks;
-
-                cmd.Parameters.Add("@MemoNo",
-                SqlDbType.NVarChar).Value = request.MemoNo;
-
-                cmd.Parameters.Add("@ApprovalLevel",
-                SqlDbType.Int).Value = currentLevel;
-
+                cmd.Parameters.Add("@User", SqlDbType.NVarChar).Value = request.UserName;
+                cmd.Parameters.Add("@Remarks", SqlDbType.NVarChar).Value = request.Remarks;
+                cmd.Parameters.Add("@MemoNo", SqlDbType.NVarChar).Value = request.MemoNo;
+                cmd.Parameters.Add("@ApprovalLevel", SqlDbType.Int).Value = currentLevel;
                 await cmd.ExecuteNonQueryAsync();
 
                 sql = @"
-
-SELECT TOP 1
-
-fldApprovalLevel
-
-FROM tbdApprovalLevel
-
-WHERE fldApprovalLevel>@CurrentLevel
-
-AND fldIsActive=1
-
-ORDER BY fldApprovalLevel
-
-";
+                    SELECT TOP 1
+                    fldApprovalLevel
+                    FROM tbdApprovalLevel
+                    WHERE fldApprovalLevel>@CurrentLevel AND fldIsActive=1
+                    ORDER BY fldApprovalLevel
+                ";
 
                 cmd = new(sql, conn, trans);
+                cmd.Parameters.Add("@CurrentLevel", SqlDbType.Int).Value = currentLevel;
 
-                cmd.Parameters.Add("@CurrentLevel",
-                SqlDbType.Int).Value = currentLevel;
-
-                object nextLevelObj =
-                await cmd.ExecuteScalarAsync();
+                object nextLevelObj = await cmd.ExecuteScalarAsync();
 
                 if (nextLevelObj != null)
                 {
-                    int nextLevel =
-                        Convert.ToInt32(nextLevelObj);
+                    int nextLevel = Convert.ToInt32(nextLevelObj);
 
                     sql = @"
-
-INSERT INTO tbdApproval
-(
-    fldNo,
-    fldApprovalLevel,
-    fldCurrentApproval,
-    fldCreatedOn,
-    fldStatus
-)
-
-VALUES
-(
-    @MemoNo,
-    @Level,
-    1,
-    GETDATE(),
-    'Waiting'
-)
-
-";
+                        INSERT INTO tbdApproval (fldNo,fldApprovalLevel,fldCurrentApproval,fldCreatedOn,fldStatus)
+                        VALUES (@MemoNo,@Level,1,GETDATE(),'Waiting')
+                    ";
 
                     cmd = new(sql, conn, trans);
-
-                    cmd.Parameters.Add("@MemoNo",
-                    SqlDbType.NVarChar).Value = request.MemoNo;
-
-                    cmd.Parameters.Add("@Level",
-                    SqlDbType.Int).Value = nextLevel;
+                    cmd.Parameters.Add("@MemoNo",SqlDbType.NVarChar).Value = request.MemoNo;
+                    cmd.Parameters.Add("@Level",SqlDbType.Int).Value = nextLevel;
 
                     await cmd.ExecuteNonQueryAsync();
                 }
 
+                //when CFO approve, generate pdf Memo
                 if (currentLevel == 40)
                 {
-                    byte[] pdf =
-                        await GenerateMemoPdfAsync(
-                            conn,
-                            trans,
-                            request.MemoNo,
-                            request.UserName);
-
-                    await SaveMemoPdfAttachmentAsync(
-                        conn,
-                        trans,
-                        request.MemoNo,
-                        pdf,
-                        request.UserName);
+                    byte[] pdf = await GenerateMemoPdfAsync(conn, trans, request.MemoNo, request.UserName);
+                    await SaveMemoPdfAttachmentAsync(conn, trans, request.MemoNo, pdf, request.UserName);
                 }
 
                 sql = @"
-
-INSERT INTO tbdMemoLog
-(
-fldNo,
-fldAction,
-fldRemarks,
-fldUser,
-fldDateTime,
-fldIPAddress
-)
-
-VALUES
-(
-@MemoNo,
-'APPROVE',
-@Remarks,
-@User,
-GETDATE(),
-@IP
-)
-
-";
+                    INSERT INTO tbdMemoLog (fldNo,fldAction,fldRemarks,fldUser,fldDateTime,fldIPAddress)
+                    VALUES (@MemoNo,'APPROVE',@Remarks,@User,GETDATE(),@IP)
+                ";
 
                 cmd = new(sql, conn, trans);
-
-                cmd.Parameters.Add("@MemoNo",
-                SqlDbType.NVarChar).Value = request.MemoNo;
-
-                cmd.Parameters.Add("@Remarks",
-                SqlDbType.NVarChar).Value = request.Remarks;
-
-                cmd.Parameters.Add("@User",
-                SqlDbType.NVarChar).Value = request.UserName;
-
-                cmd.Parameters.Add("@IP",
-                SqlDbType.NVarChar).Value = request.UserIP;
-
+                cmd.Parameters.Add("@MemoNo", SqlDbType.NVarChar).Value = request.MemoNo;
+                cmd.Parameters.Add("@Remarks", SqlDbType.NVarChar).Value = request.Remarks;
+                cmd.Parameters.Add("@User", SqlDbType.NVarChar).Value = request.UserName;
+                cmd.Parameters.Add("@IP", SqlDbType.NVarChar).Value = request.UserIP;
                 await cmd.ExecuteNonQueryAsync();
-
                 trans.Commit();
 
                 return true;
-
             }
             catch
             {
@@ -1835,6 +1719,9 @@ fldStatus='Rejected',
 fldRemarks=@Remarks
 WHERE fldNo=@MemoNo
 AND fldApprovalLevel=@Level;
+
+DELETE FROM tbdMemoDetail
+WHERE fldNo = @MemoNo;
 ";
 
                 cmd = new(sql, conn, trans);

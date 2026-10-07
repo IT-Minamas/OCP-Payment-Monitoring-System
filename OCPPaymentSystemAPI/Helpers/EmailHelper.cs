@@ -15,8 +15,8 @@ namespace OCPPaymentSystemAPI.Helpers
         }
 
         public async Task SendAsync(
-            List<string> to,
-            List<string> cc,
+            List<ApproverModel> to,
+            List<ApproverModel> cc,
             string subject,
             string body)
         {
@@ -27,16 +27,22 @@ namespace OCPPaymentSystemAPI.Helpers
                     _smtp.DisplayName,
                     _smtp.UserName));
 
-            foreach (string item in to)
+            foreach (ApproverModel item in to)
             {
-                email.To.Add(
-                    MailboxAddress.Parse(item));
+                if (!string.IsNullOrWhiteSpace(item.Email))
+                {
+                    email.To.Add(
+                        MailboxAddress.Parse(item.Email));
+                }
             }
 
-            foreach (string item in cc)
+            foreach (ApproverModel item in cc)
             {
-                email.Cc.Add(
-                    MailboxAddress.Parse(item));
+                if (!string.IsNullOrWhiteSpace(item.Email))
+                {
+                    email.Cc.Add(
+                        MailboxAddress.Parse(item.Email));
+                }
             }
 
             email.Subject = subject;
@@ -61,5 +67,6 @@ namespace OCPPaymentSystemAPI.Helpers
 
             await smtp.DisconnectAsync(true);
         }
+
     }
 }

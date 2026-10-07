@@ -313,6 +313,7 @@ namespace OCPPaymentSystem.Web.Controllers
                 true,
                 "MINAMAS-2026"
             );
+
             return Json(result.Data);
         }
 
@@ -360,6 +361,10 @@ namespace OCPPaymentSystem.Web.Controllers
                 true,
                 "MINAMAS-2026"
             );
+
+            result.Data = result.Data
+                .Where(x => x.approvalStatus != "Rejected" && x.approvalStatus != "Approved")
+                .ToList();
 
             return Json(result.Data);
         }

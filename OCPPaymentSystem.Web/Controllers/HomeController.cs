@@ -44,6 +44,12 @@ namespace OCPPaymentSystem.Web.Controllers
                 "MINAMAS-2026"
             );
 
+            if (currentUser.ApprovalLevel >= 40)        //above CFO level, only show approval for their level
+            {
+                result.Data.Approval = result.Data.Approval
+                    .Where(x => x.ApprovalLevel == currentUser.ApprovalLevel)
+                    .ToList();
+            }
 
             return View(result.Data);
         }

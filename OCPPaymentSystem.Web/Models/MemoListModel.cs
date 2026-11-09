@@ -24,5 +24,6 @@
         public string? bap { get; set; } = "";
         public string? fakturPajak { get; set; } = "";
         public string? memo { get; set; } = "";
+        public DateTime? invoiceDate { get; set; }
     }
 }

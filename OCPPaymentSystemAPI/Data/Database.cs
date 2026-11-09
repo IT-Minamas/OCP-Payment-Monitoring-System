@@ -1,4 +1,5 @@
 ﻿using Microsoft.Data.SqlClient;
+using OCPPaymentSystemAPI.Helpers;
 using System.Data;
 
 namespace OCPPaymentSystemAPI.Data
@@ -14,8 +15,16 @@ namespace OCPPaymentSystemAPI.Data
 
         public SqlConnection GetConnection()
         {
-            return new SqlConnection(
-                _configuration.GetConnectionString("DefaultConnection"));
+            string key = AppEnvironment.IsProductionServer() ? "PRDConnection" :
+                         AppEnvironment.IsQASServer() ? "QASConnection" : "";
+
+            if (string.IsNullOrEmpty(key))
+                throw new InvalidOperationException("Environment PRD/QAS tidak dikenali.");
+
+            string connectionString = _configuration.GetConnectionString(key)
+                ?? throw new InvalidOperationException($"Connection string '{key}' tidak ditemukan.");
+
+            return new SqlConnection(connectionString);
         }
     }
 }

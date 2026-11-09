@@ -9,6 +9,9 @@ QuestPDF.Settings.License = LicenseType.Community;
 
 var builder = WebApplication.CreateBuilder(args);
 
+//RZK
+builder.Services.AddHttpContextAccessor();
+
 builder.Services.AddControllers();
 
 builder.Services.AddEndpointsApiExplorer();
@@ -70,14 +73,13 @@ builder.Services.AddScoped<EmailData>();
 
 var app = builder.Build();
 
+AppEnvironment.Initialize(
+    app.Configuration,
+    app.Services.GetRequiredService<IHttpContextAccessor>());
+
 app.UseSwagger();
-
 app.UseSwaggerUI();
-
 app.UseHttpsRedirection();
-
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();

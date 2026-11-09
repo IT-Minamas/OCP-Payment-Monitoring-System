@@ -83,7 +83,8 @@ $(document).ready(function () {
 });
 
 $(document).on("click", "#tblMemo tr", function () {loadDetail($(this).attr("data-id"));});
-$(document).on("click","#btnSave", function () {saveMemo();});
+//$(document).on("click","#btnSave", function () {saveMemo();});
+$(document).on("click","#btnSave", function () {saveMemo(false);});
 $("#btnDelete").click(function () {DeleteMemo();});
 $("#btnSubmit").click(function () {SubmitMemo();});
 $("#btnApprove").click(function () {approveMemo();});
@@ -261,7 +262,6 @@ function loadDetail(memoNo) {
         {
             memoNo: memoNo
         },
-
         function (x) {
             console.table(x);
 
@@ -292,6 +292,13 @@ function loadDetail(memoNo) {
 
             $("#Perihal").val(x.perihal);
             $("#InvoiceNo").val(x.invoiceNo);
+
+            dt = new Date(x.invoiceDate);
+            month = String(dt.getMonth() + 1).padStart(2, '0');
+            day = String(dt.getDate()).padStart(2, '0');
+            year = dt.getFullYear();
+            $("#InvoiceDate").val(`${year}-${month}-${day}`);
+
             $("#PricePerKg").val(x.pricePerKg);
             $("#PPN").val(x.ppn);
 
@@ -405,6 +412,7 @@ function approvalMode() {
 
     $("#Perihal").prop("disabled", true);
     $("#InvoiceNo").prop("disabled", true);
+    $("#InvoiceDate").prop("disabled", true);
     $("#cbBank").prop("disabled", true);
 
     $("#isDeduction").prop("disabled", true);
@@ -441,6 +449,7 @@ function submissionMode() {
 
     $("#Perihal").prop("disabled", false);
     $("#InvoiceNo").prop("disabled", false);
+    $("#InvoiceDate").prop("disabled", false);
     $("#cbBank").prop("disabled", false);
 
     $("#isDeduction").prop("disabled", false);
@@ -492,7 +501,6 @@ function rejectMemo() {
             MemoNo: $("#MemoNo").val(),
             Remarks: remarks
         }),
-
         success: function (result) {
             if (!result.success) {
                 alert(result.message);
@@ -534,6 +542,7 @@ function clearForm() {
 
     $("#Perihal").val("Pembelian TBS");
     $("#InvoiceNo").val("");
+    $("#InvoiceDate").val("");
 
     $("#cbBank").empty();
     $("#cbBank").append(
@@ -547,120 +556,64 @@ $("#btnReject").click(function () {
     rejectMemo();
 });
 
-function saveMemo() {
+async function saveMemo(forSubmit = false) {
     if ($("#Company").val() == "") {
         alert("Please select Company.");
-        return;
+        return false;
     }
-
     if ($("#Supplier").val() == "") {
         alert("Please select Supplier.");
-        return;
+        return false;
     }
-
     if ($("#MemoDate").val() == "") {
-        alert("Please select Date.");
-        return;
+        alert("Please select Memo Date.");
+        return false;
     }
-
-    if ($("#Amount").val() == "") {
-        $("#Amount").val(0);
+    if ($("#InvoiceDate").val() == "") {
+        $("#InvoiceDate").val($("#MemoDate").val());
     }
+    if ($("#Amount").val() == "") $("#Amount").val(0);
 
+    let formData = new FormData();
+    formData.append("MemoNo", $("#MemoNo").val());
+    formData.append("CompanyCode", $("#Company").val());
+    formData.append("SupplierCode", $("#Supplier").val());
+    formData.append("MemoDate", $("#MemoDate").val());
+    formData.append("InvoiceDate", $("#InvoiceDate").val());
+    formData.append("Amount", $("#Amount").val());
+    formData.append("Remarks", $("#Remarks").val());
+    formData.append("NettWeight", $("#NettWeight").val());
+    formData.append("Deduction", $("#Deduction").val());
+    formData.append("PricePerKg", $("#PricePerKg").val());
+    formData.append("PPN", $("#PPN").val());
+    formData.append("PPH", $("#PPH").val());
 
-    //save
-    let formData =
-        new FormData();
-
-    formData.append(
-        "MemoNo",
-        $("#MemoNo").val());
-
-    formData.append(
-        "CompanyCode",
-        $("#Company").val());
-
-    formData.append(
-        "SupplierCode",
-        $("#Supplier").val());
-
-    formData.append(
-        "MemoDate",
-        $("#MemoDate").val());
-
-    formData.append(
-        "Amount",
-        $("#Amount").val());
-
-    formData.append(
-        "Remarks",
-        $("#Remarks").val());
-
-    formData.append(
-        "NettWeight",
-        $("#NettWeight").val());
-
-    formData.append(
-        "Deduction",
-        $("#Deduction").val());
-
-    formData.append(
-        "PricePerKg",
-        $("#PricePerKg").val());
-
-    formData.append(
-        "PPN",
-        $("#PPN").val());
-
-    formData.append(
-        "PPH",
-        $("#PPH").val());
-
-    if ($("#fileInvoice")[0].files.length > 0) {
-        formData.append(
-            "Invoice",
-            $("#fileInvoice")[0].files[0]);
-    }
-
-    if ($("#fileBAP")[0].files.length > 0) {
-        formData.append(
-            "BAP",
-            $("#fileBAP")[0].files[0]);
-    }
-
-    if ($("#fileFakturPajak")[0].files.length > 0) {
-        formData.append(
-            "FakturPajak",
-            $("#fileFakturPajak")[0].files[0]);
-    }
+    if ($("#fileInvoice")[0].files.length > 0)
+        formData.append("Invoice", $("#fileInvoice")[0].files[0]);
+    if ($("#fileBAP")[0].files.length > 0)
+        formData.append("BAP", $("#fileBAP")[0].files[0]);
+    if ($("#fileFakturPajak")[0].files.length > 0)
+        formData.append("FakturPajak", $("#fileFakturPajak")[0].files[0]);
 
     let deduction = $("#isDeduction").is(":checked")
-        ? (parseFloat($("#Deduction").val()) || 0)
-        : 0;
-
+        ? (parseFloat($("#Deduction").val()) || 0) : 0;
     let pph = $("#isPPH").is(":checked")
-        ? (parseFloat($("#PPH").val()) || 0)
-        : 0;
-
+        ? (parseFloat($("#PPH").val()) || 0) : 0;
     let ppn = $("#isPPN").is(":checked")
-        ? (parseFloat($("#PPN").val()) || 0)
-        : 0;
+        ? (parseFloat($("#PPN").val()) || 0) : 0;
 
-    var data =
-    {
+    let data = {
         companyCode: $("#Company").val(),
         supplierCode: $("#Supplier").val(),
         memoDate: $("#MemoDate").val(),
-
         perihal: $("#Perihal").val(),
         invoiceNo: $("#InvoiceNo").val(),
+        invoiceDate: $("#InvoiceDate").val(),
         bankCode: $("#cbBank").val(),
-
         amount: parseFloat($("#Amount").val()) || 0,
         remarks: $("#Remarks").val(),
         memoNo: $("#MemoNo").val(),
         millCode: $("#MillCode").val(),
-
         nettWeight: parseFloat($("#NettWeight").val()) || 0,
         deduction: deduction,
         pricePerKg: parseFloat($("#PricePerKg").val()) || 0,
@@ -669,41 +622,52 @@ function saveMemo() {
     };
 
     console.table(data);
-    let url =
-        $("#MemoNo").val() == ""
-            ? "/Memo/Save"
-            : "/Memo/Update";
+    let url = $("#MemoNo").val() == "" ? "/Memo/Save" : "/Memo/Update";
+    //alert('exit');
+    //return;
+    //alert(JSON.stringify(data));
 
-    $.ajax({
-        url: url,
-        type: "POST",
-        contentType: "application/json",
-        data: JSON.stringify(data),
+    try {
+        const result = await $.ajax({
+            url: url,
+            type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify(data)
+        });
 
-        success: function (result) {
-            if (!result.success) {
-                alert(result.message);
+        if (!result.success) {
+            alert(result.message);
+            return false;
+        }
 
-                return;
-            }
+        // Ambil nomor memo dari response server atau form.
+        const savedMemoNo = result.memoNo || result.data?.memoNo || $("#MemoNo").val();
 
+        if (!savedMemoNo) {
+            //alert("Save succeeded, but Memo No was not returned by the server.");
             alert("Data saved successfully.");
             loadMemo();
-            clearForm();
-            setMode(FORM_MODE.NEW);
-        },
-
-        error: function (xhr) {
-            console.log(xhr);
-
-            alert(
-                "Status : " + xhr.status +
-                "\n\n" +
-                xhr.responseText
-            );
+            return false;
         }
-    });
 
+        $("#MemoNo").val(savedMemoNo);
+
+        // Ketika dipanggil oleh SubmitMemo(), jangan reset form.
+        if (forSubmit) {
+            return { success: true, memoNo: savedMemoNo };
+        }
+
+        alert("Data saved successfully.");
+        loadMemo();
+        clearForm();
+        setMode(FORM_MODE.NEW);
+        return { success: true, memoNo: savedMemoNo };
+
+    } catch (xhr) {
+        console.log(xhr);
+        alert("Status : " + xhr.status + "\n\n" + (xhr.responseText || "Unable to save data."));
+        return false;
+    }
 }
 
 function loadAttachment() {
@@ -755,7 +719,42 @@ function formatDate(value) {
         + dt.getFullYear();
 }
 
-function SubmitMemo() {
+let isSubmitting = false;
+
+async function SubmitMemo() {
+    if (isSubmitting) return;
+    if ($("#Company").val() == "" || $("#Supplier").val() == "" || $("#MemoDate").val() == "" || $("#InvoiceDate").val() == "") {
+        alert("Please complete the required fields before submitting.");
+        return;
+    }
+    if (!confirm("Submit this Memo for Approval?")) return;
+    isSubmitting = true;
+    $("#btnSubmit, #btnSave").prop("disabled", true);
+    try {
+        const saveResult = await saveMemo(true);
+        if (!saveResult || !saveResult.success) return;
+        const result = await $.ajax({
+            url: "/Memo/Submit",
+            type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({ MemoNo: saveResult.memoNo })
+        });
+        if (!result.success) {
+            alert(result.message);
+            return;
+        }
+        alert("Memo submitted successfully.");
+        loadMemo();
+        clearForm();
+        setMode(FORM_MODE.NEW);
+    } catch (xhr) {
+        alert(xhr.responseText || "Unable to submit memo.");
+    } finally {
+        isSubmitting = false;
+        $("#btnSubmit, #btnSave").prop("disabled", false);
+    }
+}
+function SubmitMemo1() {
     if ($("#txtMemoNo").val() == "") {
         alert("Please save Memo first.");
         return;
@@ -927,9 +926,11 @@ function loadSDGWeighDetail() {
         success: function (data) {
             $("#sdgDetailList").empty();
 
+            alert(memoNo);
+
             let totalNett = 0;
             let totalDeduction = 0;
-            //console.table(data);
+            console.table(data);
 
             $.each(data, function (i, x) {
                 totalNett += x.nettWeight;

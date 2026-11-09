@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using OCPPaymentSystemAPI.Data;
+using OCPPaymentSystemAPI.Helpers;
 using OCPPaymentSystemAPI.Models;
 
 namespace OCPPaymentSystemAPI.Controllers
@@ -9,11 +10,26 @@ namespace OCPPaymentSystemAPI.Controllers
     public class LoginController : ControllerBase
     {
         private readonly LoginData _loginData;
+        private readonly IConfiguration _configuration;
 
         public LoginController(
-            LoginData loginData)
+            LoginData loginData,
+            IConfiguration configuration)
         {
             _loginData = loginData;
+            _configuration = configuration;
+        }
+
+        [HttpGet]
+        [Route("GetServerHostName")]
+        public IActionResult GetServerHostName()
+        {
+            return Ok(new
+            {
+                BaseUrl = AppEnvironment.GetBaseUrl(),
+                IsProduction = AppEnvironment.IsProductionServer(),
+                IsQAS = AppEnvironment.IsQASServer()
+            });
         }
 
         [HttpPost]

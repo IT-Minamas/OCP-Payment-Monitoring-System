@@ -406,8 +406,13 @@ EXEC sp_GetApprovalLevel '00043497','Area Controller, Jambi - POE'
 --diketahui : approval level saat ini : 10
 --ditanyakan : siapa approval level selanjutnya
 --input
+DECLARE @strMemoNo nvarchar(40)
+
 DECLARE @intApprovalLevel int
 DECLARE @strMillCode nvarchar(5)
+
+SET @strMemoNo = 'M.1/OCP-TREA/GPI-TBS/RSS/IX/2026'
+SELECT @intApprovalLevel=ApprovalLevel,@strMillCode=fldMillCode FROM vw_SearchMemo WHERE fldNo=@strMemoNo
 
 --output
 DECLARE @outApprovalLevel int
@@ -456,7 +461,7 @@ WHERE Employee_ID IN (
 )
 ------------------------------------------------------------------------
 
-EXEC sp_GetNextApprover 40,'M438'
+EXEC sp_GetNextApprover 'M.1/OCP-TREA/GPI-TBS/RSS/IX/2026'
 
 SELECT *
 FROM [CentralAuthentication].[dbo].[vw_All_ManPower]
@@ -464,3 +469,77 @@ WHERE Employee_ID IN (
 '00043357',
 '00092363',
 '00043669')
+
+SELECT * FROM tbdApproval
+SELECT * FROM vw_SearchMemo
+
+SELECT *,b.Employee_Name AS EmployeeName_00,c.Employee_Name AS EmployeeName_10,d.Employee_Name AS EmployeeName_20,e.Employee_Name AS EmployeeName_30,f.Employee_Name AS EmployeeName_40,g.Employee_Name AS EmployeeName_50,h.Employee_Name AS EmployeeName_60
+FROM vw_rpt_MemoProgress AS a
+LEFT JOIN [172.16.192.21].[CentralAuthentication].[dbo].[vw_All_ManPower] AS b ON a.ApprovedBy_L00 COLLATE SQL_Latin1_General_CP1_CI_AS=b.Employee_ID COLLATE SQL_Latin1_General_CP1_CI_AS
+LEFT JOIN [172.16.192.21].[CentralAuthentication].[dbo].[vw_All_ManPower] AS c ON a.ApprovedBy_L10 COLLATE SQL_Latin1_General_CP1_CI_AS=c.Employee_ID COLLATE SQL_Latin1_General_CP1_CI_AS
+LEFT JOIN [172.16.192.21].[CentralAuthentication].[dbo].[vw_All_ManPower] AS d ON a.ApprovedBy_L20 COLLATE SQL_Latin1_General_CP1_CI_AS=d.Employee_ID COLLATE SQL_Latin1_General_CP1_CI_AS
+LEFT JOIN [172.16.192.21].[CentralAuthentication].[dbo].[vw_All_ManPower] AS e ON a.ApprovedBy_L30 COLLATE SQL_Latin1_General_CP1_CI_AS=e.Employee_ID COLLATE SQL_Latin1_General_CP1_CI_AS
+LEFT JOIN [172.16.192.21].[CentralAuthentication].[dbo].[vw_All_ManPower] AS f ON a.ApprovedBy_L40 COLLATE SQL_Latin1_General_CP1_CI_AS=f.Employee_ID COLLATE SQL_Latin1_General_CP1_CI_AS
+LEFT JOIN [172.16.192.21].[CentralAuthentication].[dbo].[vw_All_ManPower] AS g ON a.ApprovedBy_L50 COLLATE SQL_Latin1_General_CP1_CI_AS=g.Employee_ID COLLATE SQL_Latin1_General_CP1_CI_AS
+LEFT JOIN [172.16.192.21].[CentralAuthentication].[dbo].[vw_All_ManPower] AS h ON a.ApprovedBy_L60 COLLATE SQL_Latin1_General_CP1_CI_AS=h.Employee_ID COLLATE SQL_Latin1_General_CP1_CI_AS
+
+SELECT *
+FROM [172.16.192.10].[SAP_Replicate_New].[dbo].[ADM_Region]
+
+SELECT *
+FROM vw_SearchMemo
+
+USE OCPPaymentSystem
+EXEC sp_GetRequester 'M.19/OCP-TREA/LMI-TBS/KSP/X/2026'
+
+-------------------------------------------------------------------------------
+--Reports
+DECLARE @Cols NVARCHAR(MAX) = N'';
+DECLARE @SQL NVARCHAR(MAX) = N'';
+
+-- 1. Bangun kolom secara dinamis berdasarkan level approval aktif
+SELECT @Cols = STRING_AGG(
+    CAST(
+        N'MAX(CASE WHEN a.fldApprovalLevel = ' +
+        CONVERT(NVARCHAR(10), fldApprovalLevel) +
+        N' THEN a.fldApprovedBy END) AS ' +
+        QUOTENAME(N'ApprovedBy_L' + CONVERT(NVARCHAR(10), fldApprovalLevel)) +
+
+        N', MAX(CASE WHEN a.fldApprovalLevel = ' +
+        CONVERT(NVARCHAR(10), fldApprovalLevel) +
+        N' THEN a.fldApprovedOn END) AS ' +
+        QUOTENAME(N'ApprovedOn_L' + CONVERT(NVARCHAR(10), fldApprovalLevel)) +
+
+        N', MAX(CASE WHEN a.fldApprovalLevel = ' +
+        CONVERT(NVARCHAR(10), fldApprovalLevel) +
+        N' THEN mp.Employee_Name END) AS ' +
+        QUOTENAME(N'EmployeeName_L' + CONVERT(NVARCHAR(10), fldApprovalLevel))
+        AS NVARCHAR(MAX)
+    ),
+    N', '
+) WITHIN GROUP (ORDER BY fldSequence)
+FROM tbdApprovalLevel
+WHERE fldIsActive = 1;
+
+-- 2. Validasi konfigurasi level
+IF NULLIF(@Cols, N'') IS NULL
+BEGIN
+    THROW 50001, 'No active approval levels found in tbdApprovalLevel.', 1;
+END;
+
+-- 3. Susun query final
+SET @SQL = N'
+SELECT
+    a.fldNo,
+    MAX(a.fldCreatedBy) AS CreatedBy_L00,
+    MAX(a.fldCreatedOn) AS CreatedOn_L00,
+    ' + @Cols + N'
+FROM tbdApproval a
+LEFT JOIN [172.16.192.21].[CentralAuthentication].[dbo].[vw_All_ManPower] mp
+    ON a.fldApprovedBy COLLATE SQL_Latin1_General_CP1_CI_AS
+     = mp.Employee_ID COLLATE SQL_Latin1_General_CP1_CI_AS
+GROUP BY a.fldNo
+ORDER BY a.fldNo;';
+
+-- 4. Eksekusi
+EXEC sys.sp_executesql @SQL;

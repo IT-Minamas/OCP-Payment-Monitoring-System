@@ -83,7 +83,8 @@ namespace OCPPaymentSystemAPI.Documents
 
                         if (model.Approvers != null && model.Approvers.Count > 0)
                         {
-                            var approvers = model.Approvers.Take(5).ToList();
+                            //var approvers = model.Approvers.Take(5).ToList();
+                            var approvers = model.Approvers.Take(model.Approvers.Count).ToList();
 
                             if (approvers.Count > 0)
                             {
@@ -108,10 +109,28 @@ namespace OCPPaymentSystemAPI.Documents
                             {
                                 col.Item().PaddingTop(5).Row(row =>
                                 {
-                                    row.RelativeItem();
-                                    row.RelativeItem().Element(container => ComposeApproverCard(container, approvers[4], -99));
-                                    row.RelativeItem();
+                                    for (int i = 4; i < approvers.Count; i++)
+                                    {
+                                        if (i < approvers.Count)
+                                        {
+                                            var approver = approvers[i];
+                                            row.RelativeItem().Element(container => ComposeApproverCard(container, approver, i));
+                                        }
+                                        else
+                                        {
+                                            row.RelativeItem();
+                                        }
+                                    }
                                 });
+                                //RZK
+                                //2026.10.27
+                                //untuk tanda tangan approver membentuk 2 baris, dengan baris ke-dua bisa lebih dari 1 approver, maka baris ke-dua akan menyesuaikan jumlah approver yang ada, sehingga tidak perlu di hardcode 1 approver saja
+                                //col.Item().PaddingTop(5).Row(row =>
+                                //{
+                                //    row.RelativeItem();
+                                //    row.RelativeItem().Element(container => ComposeApproverCard(container, approvers[4], -99));
+                                //    row.RelativeItem();
+                                //});
                             }
                         }
                     });

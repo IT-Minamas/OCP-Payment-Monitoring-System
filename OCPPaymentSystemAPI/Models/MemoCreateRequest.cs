@@ -23,5 +23,6 @@ namespace OCPPaymentSystemAPI.Models
         public decimal? PricePerKg { get; set; }
         public decimal? PPN { get; set; }
         public decimal? PPH { get; set; }
+        public DateTime? InvoiceDate { get; set; }
     }
 }

@@ -22,8 +22,27 @@ namespace OCPPaymentSystem.Web.Services
             _httpContext = httpContext;
         }
 
-        private string BaseUrl =>
+        private string BaseUrl__ =>
             _config["ApiSetting:BaseUrl"]!;
+
+        private string BaseUrl
+        {
+            get
+            {
+                string host = _httpContext.HttpContext?.Request.Host.Host ?? "";
+
+                //if (host.Equals("ocppayment.sdguthrie.com", StringComparison.OrdinalIgnoreCase))
+                if (host.Equals("ocppayment.sdguthrie.com", StringComparison.OrdinalIgnoreCase) || host.Equals("ocppayment.minamasplantation.com", StringComparison.OrdinalIgnoreCase))
+                {
+                    return _config["ApiSetting:PRDUrl"] ?? "";
+                } else {
+                    return _config["ApiSetting:QASUrl"] ?? "";
+                }
+
+                throw new InvalidOperationException(
+                    $"Environment tidak dikenali untuk host: {host}");
+            }
+        }
 
         private void AddApiKey(string apiKey)
         {
@@ -177,7 +196,8 @@ namespace OCPPaymentSystem.Web.Services
                 result = await response.Content.ReadAsStringAsync();
 
                 throw new Exception(
-                    $"Status : {(int)response.StatusCode}\n\n{result}");
+                    //$"\nStatus : {(int)response.StatusCode}\n\n{result}" + $"\nBaseUrl     : {BaseUrl}\n" + $"\nEndpoint    : {endpoint}\n");
+                    $"\nStatus : {(int)response.StatusCode}\n\n{result}");
             }
 
             return JsonSerializer.Deserialize<TResponse>(

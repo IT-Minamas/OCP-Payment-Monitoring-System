@@ -10,4 +10,6 @@
     public decimal? AmountTo { get; set; }
     public string Remarks { get; set; } = "";
     public string Approver { get; set; } = "";
+    public DateTime? InvoiceDateFrom { get; set; }
+    public DateTime? InvoiceDateTo { get; set; }
 }

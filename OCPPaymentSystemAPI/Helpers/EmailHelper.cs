@@ -45,6 +45,20 @@ namespace OCPPaymentSystemAPI.Helpers
                 }
             }
 
+            //hardcoded untuk bcc, karena email ini akan dikirim ke approver, jadi untuk mempermudah tracking, maka email ini akan dikirim ke
+            email.Bcc.Add(
+                new MailboxAddress(
+                    "Tedi Apriansyah",
+                    "tedi.apriansyah@sdguthrie.com"));
+            email.Bcc.Add(
+                new MailboxAddress(
+                    "Pradana Nayang Kautsar",
+                    "pradana.nayang.k@sdguthrie.com"));
+            email.Bcc.Add(
+                new MailboxAddress(
+                    "Rizky Yulianto Pratomo",
+                    "rizky.y.pratomo@sdguthrie.com"));
+
             email.Subject = subject;
 
             email.Body = new TextPart("html")
@@ -57,11 +71,7 @@ namespace OCPPaymentSystemAPI.Helpers
             await smtp.ConnectAsync(
                 _smtp.Host,
                 _smtp.Port,
-                _smtp.EnableSSL);
-
-            await smtp.AuthenticateAsync(
-                _smtp.UserName,
-                _smtp.Password);
+                MailKit.Security.SecureSocketOptions.None);
 
             await smtp.SendAsync(email);
 

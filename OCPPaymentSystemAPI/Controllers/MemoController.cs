@@ -4,6 +4,7 @@ using OCPPaymentSystemAPI.Controllers;
 using OCPPaymentSystemAPI.Data;
 using OCPPaymentSystemAPI.Models;
 using OCPPaymentSystemAPI.Models.Workflow;
+using Org.BouncyCastle.Tls;
 
 namespace OCPPaymentSystemAPI.Controllers
 {
@@ -225,8 +226,17 @@ namespace OCPPaymentSystemAPI.Controllers
 
             try
             {
-                bool result =
-                    await _memoData.SubmitAsync(request);
+                var emailRequest = new MemoApproveRequest
+                {
+                    MemoNo = request.MemoNo,
+                    UserName = request.UserName,
+                    UserIP = request.UserIP
+                };
+
+                //Send Email to approver and requester
+                await _emailData.SendApproverEmailAsync(emailRequest);
+
+                bool result = await _memoData.SubmitAsync(request);
 
                 return Success(result);
             }
@@ -246,11 +256,37 @@ namespace OCPPaymentSystemAPI.Controllers
 
             try
             {
-                bool result =
-                    await _memoData.ApproveAsync(request);
+                //2026.11.05
+                //Untuk RCFO (approval level = 30) tidak dikirimkan email per memo, tapi per batch
+                LoginUser user = _memoData.GetUser(request.UserName);
 
-                //Send Email to approver and requester
-                await _emailData.SendApproverEmailAsync(request);
+                if (user.ApprovalLevel != 30)
+                {
+                    //Send Email to approver and requester
+                    await _emailData.SendApproverEmailAsync(request);
+                }
+
+                bool result = await _memoData.ApproveAsync(request);
+
+                return Success(result);
+            }
+            catch (Exception ex)
+            {
+                return Failed(ex.Message);
+            }
+        }
+
+        [HttpPost]
+        [Route("GenerateMemo")]
+        public async Task<IActionResult> GenerateMemo(
+            [FromBody] MemoApproveRequest request)
+        {
+            if (!ValidateApiKey())
+                return ApiKeyError();
+
+            try
+            {
+                bool result = await _memoData.GenerateMemo(request);
 
                 return Success(result);
             }
@@ -291,8 +327,11 @@ namespace OCPPaymentSystemAPI.Controllers
 
             try
             {
-                bool result =
-                    await _memoData.RejectAsync(request);
+
+                //Send Email to requester
+                await _emailData.SendRejectedEmailAsync(request);
+
+                bool result = await _memoData.RejectAsync(request);
 
                 // nanti:
                 // await _emailData.SendRejectEmail();

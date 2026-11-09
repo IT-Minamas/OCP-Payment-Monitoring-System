@@ -590,7 +590,6 @@ namespace OCPPaymentSystem.Web.Controllers
             try
             {
                 string? json = HttpContext.Session.GetString("CurrentUser");
-
                 LoginUser? currentUser = null;
                 if (!string.IsNullOrEmpty(json))
                 {

@@ -9,6 +9,8 @@
         public string SupplierCode { get; set; } = "";
         public DateTime? DateFrom { get; set; }
         public DateTime? DateTo { get; set; }
+        public DateTime? InvoiceDateFrom { get; set; }
+        public DateTime? InvoiceDateTo { get; set; }
         public string CompanyCode { get; set; } = "";
         public decimal? AmountFrom { get; set; }
         public decimal? AmountTo { get; set; }

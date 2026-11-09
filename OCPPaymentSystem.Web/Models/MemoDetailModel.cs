@@ -26,5 +26,6 @@
         public string perihal { get; set; } = "";
         public string invoiceNo { get; set; } = "";
         public string bankCode { get; set; } = "";
+        public DateTime? invoiceDate { get; set; }
     }
 }

@@ -1,8 +1,9 @@
-﻿using System.Text;
-using System.Text.Json;
+﻿using Microsoft.Data.SqlClient;
+using OCPPaymentSystemAPI.Helpers;
 using OCPPaymentSystemAPI.Models;
-using Microsoft.Data.SqlClient;
 using System.Data;
+using System.Text;
+using System.Text.Json;
 
 namespace OCPPaymentSystemAPI.Data
 {
@@ -10,26 +11,24 @@ namespace OCPPaymentSystemAPI.Data
     {
         private readonly IConfiguration _configuration;
         private readonly HttpClient _httpClient;
+        private readonly Database _database;
 
         public LoginData(
             IConfiguration configuration,
-            HttpClient httpClient)
+            HttpClient httpClient, 
+            Database database)
         {
             _configuration = configuration;
             _httpClient = httpClient;
+            _database = database;
         }
 
         public async Task<LoginResponse> LoginAsync(
             LoginRequest request)
         {
-            string baseUrl =
-                _configuration["WidgetAPI:BaseUrl"]!;
-
-            string loginEndpoint =
-                _configuration["WidgetAPI:LoginEndpoint"]!;
-
-            string applicationID =
-                _configuration["WidgetAPI:ApplicationID"]!;
+            string baseUrl = _configuration["WidgetAPI:BaseUrl"]!;
+            string loginEndpoint = _configuration["WidgetAPI:LoginEndpoint"]!;
+            string applicationID = _configuration["WidgetAPI:ApplicationID"]!;
 
             var body = new
             {
@@ -55,12 +54,22 @@ namespace OCPPaymentSystemAPI.Data
 
             //RZK
             //2026.06.29
-            //Untuk keperluan tracing
             string json = "";
-            if (request.fldPassword == "ocp12345") {
-                json = "{ \"fldType\":\"SUCCESS\",\"fldMessage\":\"sukses!\",\"errorDebugMessageForDeveloper\":\"\",\"user\":{ \"fldUserId\":\"" + request.fldUserId + "\",\"fldName\":\"Testing\",\"fldApiKey\":\"bdee557e3d9080a9275ca04e9d3b7df9\"} }";
-            }
-            else {
+            if (AppEnvironment.IsQASServer())
+            {
+                //Untuk keperluan tracing
+                if (request.fldPassword == "ocp12345")
+                {
+                    json = "{ \"fldType\":\"SUCCESS\",\"fldMessage\":\"sukses!\",\"errorDebugMessageForDeveloper\":\"\",\"user\":{ \"fldUserId\":\"" + request.fldUserId + "\",\"fldName\":\"Testing\",\"fldApiKey\":\"bdee557e3d9080a9275ca04e9d3b7df9\"} }";
+                }
+                else
+                {
+                    json = await response.Content.ReadAsStringAsync();
+                    if (!response.IsSuccessStatusCode)
+                        throw new Exception(json);
+                }
+            } else
+            {
                 json = await response.Content.ReadAsStringAsync();
                 if (!response.IsSuccessStatusCode)
                     throw new Exception(json);
@@ -85,7 +94,7 @@ namespace OCPPaymentSystemAPI.Data
                     StringComparison.OrdinalIgnoreCase))
             {
                 if (result.fldType == "LOGIN_INVALID")
-                    throw new Exception(result.fldMessage);
+                    throw new Exception(result.fldMessage + " Base Url: " + baseUrl + " Endpoint: " + loginEndpoint + " applicationID: " + applicationID);
 
                 throw new Exception(result.fldMessage);
             }
@@ -112,7 +121,7 @@ namespace OCPPaymentSystemAPI.Data
 
         private async Task InsertLogAsync(string userName, string remarks)
         {
-            using SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection"));
+            using SqlConnection conn = _database.GetConnection();
             await conn.OpenAsync();
 
             using var cmd = new SqlCommand(@"
@@ -140,14 +149,15 @@ namespace OCPPaymentSystemAPI.Data
         {
             UserAccessModel result = new();
 
-            using SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection"));
+            
+            using SqlConnection conn = _database.GetConnection();
             await conn.OpenAsync();
 
             //---------------------------------------------------------------------------------------------------------------------------
             // Ambil data Man Power untuk mendapatkan data :
             // SAP ID, Nama, Unit (Code dan Nama) dari lokasi ybs, Company (Code dan Nama) dari lokasi ybs
             //---------------------------------------------------------------------------------------------------------------------------
-            SqlCommand cmd = new("CentralAuthentication.dbo.sp_GetDetailByUserAccess",conn);
+            SqlCommand cmd = new("[172.16.192.21].[CentralAuthentication].[dbo].[sp_GetDetailByUserAccess]", conn);
 
             cmd.CommandType = CommandType.StoredProcedure;
             cmd.Parameters.AddWithValue("@UserId",sapID);

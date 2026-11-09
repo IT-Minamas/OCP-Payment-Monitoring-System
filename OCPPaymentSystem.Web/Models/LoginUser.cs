@@ -5,6 +5,7 @@
         public string fldUserId { get; set; } = "";
         public string fldName { get; set; } = "";
         public string fldApiKey { get; set; } = "";
+        public string millCode { get; set; } = "";
         public string UnitCode { get; set; } = "";
         public string UnitName { get; set; } = "";
         public string CompanyCode { get; set; } = "";
